@@ -32,10 +32,16 @@ df['RecipeIngredientParts'] = df['RecipeIngredientParts'].apply(clean_array_colu
 df['RecipeInstructions'] = df['RecipeInstructions'].apply(clean_array_column)
 
 print(" Processing Feature Engineering create column search_text...")
+
 df['Name'] = df['Name'].fillna('')
+df['RecipeIngredientParts'] = df['RecipeIngredientParts'].fillna('')
+df['RecipeInstructions'] = df['RecipeInstructions'].fillna('')
+df['Keywords'] = df['Keywords'].fillna('')
+
 df['search_text'] = (df['Name'] + " " +
                      df['RecipeIngredientParts'].astype(str) + " " +
-                     df['RecipeInstructions'].astype(str)).str.lower()
+                     df['RecipeInstructions'].astype(str) + " " +
+                     df['Keywords'].astype(str)).str.lower()
 
 df['search_text'] = df['search_text'].apply(lambda x: re.sub(r'[^\w\s]', '', x))
 
