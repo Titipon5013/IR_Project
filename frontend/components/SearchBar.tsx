@@ -174,7 +174,7 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
 
         {showSuggestions && suggestions.length > 0 && (
           <div
-            className={`absolute w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-40 ${
+            className={`absolute w-full max-h-64 overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-40 ${
               showCorrectionPrompt ? 'mt-[8.75rem]' : 'mt-2'
             }`}
           >
