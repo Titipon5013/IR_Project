@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
 import { ChevronRight } from 'lucide-react';
 import {
+  getAllRecipesPaginated,
   getCategories,
   getRandomRecipes,
   getRecipesByCategory,
@@ -21,7 +23,9 @@ export default function Home() {
   const [personalizedRecipes, setPersonalizedRecipes] = useState<Recipe[]>([]);
   const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
   const [randomRecipes, setRandomRecipes] = useState<Recipe[]>([]);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [categoryTitle, setCategoryTitle] = useState('Trending');
+  const [topTrendingCategory, setTopTrendingCategory] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -29,19 +33,22 @@ export default function Home() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [picked, surprise, categories] = await Promise.all([
+        const [picked, surprise, allPage, categories] = await Promise.all([
           getRandomRecipes(8),
           getRandomRecipes(8),
+          getAllRecipesPaginated(1, 8),
           getCategories(),
         ]);
 
         setPersonalizedRecipes(picked.slice(0, 4).map(toUiRecipe));
         setRandomRecipes(surprise.slice(0, 4).map(toUiRecipe));
+        setAllRecipes(allPage.results.slice(0, 4).map(toUiRecipe));
 
         const topCategories = categories.slice(0, 2).map((category) => category.name);
         if (topCategories.length === 0) {
           setCategoryRecipes([]);
           setCategoryTitle('Trending');
+          setTopTrendingCategory('');
           return;
         }
 
@@ -51,10 +58,13 @@ export default function Home() {
         const merged = categoryGroups.flat().slice(0, 8).map(toUiRecipe);
         setCategoryRecipes(merged);
         setCategoryTitle(`Trending in ${topCategories.join(' & ')}`);
+        setTopTrendingCategory(topCategories[0]);
       } catch {
         setPersonalizedRecipes([]);
         setCategoryRecipes([]);
         setRandomRecipes([]);
+        setAllRecipes([]);
+        setTopTrendingCategory('');
       } finally {
         setIsLoading(false);
       }
@@ -85,11 +95,34 @@ export default function Home() {
 
   const homeSections = useMemo(
     () => [
-      { key: 'picked', title: 'Picked For You', recipes: personalizedRecipes, action: 'View All' },
-      { key: 'trending', title: categoryTitle, recipes: categoryRecipes, action: 'View All' },
-      { key: 'surprise', title: 'Surprise Me', recipes: randomRecipes, action: 'Refresh' },
+      {
+        key: 'picked',
+        title: 'Picked For You',
+        recipes: personalizedRecipes,
+        href: '/recipes?section=picked',
+      },
+      {
+        key: 'trending',
+        title: categoryTitle,
+        recipes: categoryRecipes,
+        href: topTrendingCategory
+          ? `/recipes?section=trending&category=${encodeURIComponent(topTrendingCategory)}`
+          : '/recipes?section=trending',
+      },
+      {
+        key: 'surprise',
+        title: 'Surprise Me',
+        recipes: randomRecipes,
+        href: '/recipes?section=surprise',
+      },
+      {
+        key: 'all',
+        title: 'All Recipes',
+        recipes: allRecipes,
+        href: '/recipes?section=all',
+      },
     ],
-    [personalizedRecipes, categoryRecipes, randomRecipes, categoryTitle]
+    [personalizedRecipes, categoryRecipes, randomRecipes, allRecipes, categoryTitle, topTrendingCategory]
   );
 
   return (
@@ -155,12 +188,22 @@ export default function Home() {
                     <div key={section.key} data-aos="fade-up" data-aos-delay={index * 100}>
                       <div className="flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-zinc-100">{section.title}</h2>
-                        <button
-                          onClick={() => section.key === 'surprise' && setRefreshKey((prev) => prev + 1)}
-                          className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm"
-                        >
-                          {section.action} <ChevronRight size={16} />
-                        </button>
+                        <div className="flex items-center gap-4">
+                          {section.key === 'surprise' && (
+                            <button
+                              onClick={() => setRefreshKey((prev) => prev + 1)}
+                              className="text-zinc-500 hover:text-zinc-200 transition-colors text-sm"
+                            >
+                              Refresh
+                            </button>
+                          )}
+                          <Link
+                            href={section.href}
+                            className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm"
+                          >
+                            View All <ChevronRight size={16} />
+                          </Link>
+                        </div>
                       </div>
                       <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
                         {section.recipes.length > 0 ? (
