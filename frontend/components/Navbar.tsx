@@ -18,13 +18,13 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800">
+    <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
             href="/"
-            className="text-2xl font-bold bg-gradient-to-r from-zinc-100 to-emerald-400 bg-clip-text text-transparent hover:from-emerald-400 hover:to-emerald-500 transition-all"
+            className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-sky-400 bg-clip-text text-transparent hover:from-sky-400 hover:to-sky-500 transition-all"
           >
             Food Assemble
           </Link>
@@ -33,21 +33,21 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="/"
-              className="flex items-center gap-2 text-zinc-300 hover:text-emerald-400 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors"
             >
               <Search size={18} />
               <span>Discover</span>
             </Link>
             <Link
               href="/folders"
-              className="flex items-center gap-2 text-zinc-300 hover:text-emerald-400 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors"
             >
               <FolderHeart size={18} />
               <span>Folders</span>
             </Link>
             <Link
               href="/bookmarks"
-              className="flex items-center gap-2 text-zinc-300 hover:text-emerald-400 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors"
             >
               <Bookmark size={18} />
               <span>Bookmarks</span>
@@ -58,12 +58,12 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {isAuthEnabled && user ? (
               <>
-                <span className="hidden sm:inline text-sm text-zinc-300 max-w-[220px] truncate" title={user.email ?? ''}>
+                <span className="hidden sm:inline text-sm text-slate-300 max-w-[220px] truncate" title={user.email ?? ''}>
                   {user.email ?? '-'}
                 </span>
                 <button
                   onClick={() => void signOut()}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors"
                 >
                   <LogOut size={18} />
                   <span>Logout</span>
@@ -73,7 +73,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/auth"
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-slate-950 font-medium rounded-lg transition-colors"
                 >
                   <LogIn size={18} />
                   <span>{mounted && !isAuthEnabled ? 'Configure Auth' : 'Login'}</span>
@@ -81,7 +81,7 @@ export default function Navbar() {
                 {isAuthEnabled && (
                   <button
                     onClick={() => void signInWithGoogle()}
-                    className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
+                    className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition-colors"
                   >
                     <GoogleIcon className="h-4 w-4" />
                     <span>Google</span>
@@ -92,7 +92,7 @@ export default function Navbar() {
                     onClick={() => {
                       showMessage(`Set env first: ${SUPABASE_CONFIG_HINTS.join(' | ')}`, 'info');
                     }}
-                    className="hidden sm:inline-flex items-center px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors text-sm"
+                    className="hidden sm:inline-flex items-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors text-sm"
                   >
                     Env help
                   </button>
@@ -106,21 +106,21 @@ export default function Navbar() {
         <div className="flex md:hidden items-center justify-around pb-3 space-x-4">
           <Link
             href="/"
-            className="flex flex-col items-center gap-1 text-zinc-400 hover:text-emerald-400 transition-colors"
+            className="flex flex-col items-center gap-1 text-slate-400 hover:text-sky-400 transition-colors"
           >
             <Search size={20} />
             <span className="text-xs">Discover</span>
           </Link>
           <Link
             href="/folders"
-            className="flex flex-col items-center gap-1 text-zinc-400 hover:text-emerald-400 transition-colors"
+            className="flex flex-col items-center gap-1 text-slate-400 hover:text-sky-400 transition-colors"
           >
             <FolderHeart size={20} />
             <span className="text-xs">Folders</span>
           </Link>
           <Link
             href="/bookmarks"
-            className="flex flex-col items-center gap-1 text-zinc-400 hover:text-emerald-400 transition-colors"
+            className="flex flex-col items-center gap-1 text-slate-400 hover:text-sky-400 transition-colors"
           >
             <Bookmark size={20} />
             <span className="text-xs">Bookmarks</span>

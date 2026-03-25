@@ -126,18 +126,18 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-slate-950">
       {/* Hero Section */}
-      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-zinc-900 to-zinc-950">
+      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="container mx-auto max-w-5xl text-center">
           <h1
-            className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-zinc-100 to-emerald-400 bg-clip-text text-transparent"
+            className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-slate-100 to-sky-400 bg-clip-text text-transparent"
             data-aos="fade-down"
           >
             Discover Food Assemble
           </h1>
           <p
-            className="text-lg text-zinc-400 mb-8 max-w-2xl mx-auto"
+            className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto"
             data-aos="fade-up"
             data-aos-delay="100"
           >
@@ -157,9 +157,9 @@ export default function Home() {
             /* Search Results Grid */
             <div>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-zinc-100">
+                <h2 className="text-2xl font-bold text-slate-100">
                   Search Results{' '}
-                  <span className="text-emerald-400">({searchResults.length})</span>
+                  <span className="text-sky-400">({searchResults.length})</span>
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -173,7 +173,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="col-span-full text-center py-20">
-                    <p className="text-zinc-500 text-lg">No recipes found</p>
+                    <p className="text-slate-500 text-lg">No recipes found</p>
                   </div>
                 )}
               </div>
@@ -182,24 +182,24 @@ export default function Home() {
             /* Curated Carousels */
               <div className="space-y-12">
                 {isLoading ? (
-                  <div className="text-center py-20 text-zinc-500">Loading recipes...</div>
+                  <div className="text-center py-20 text-slate-500">Loading recipes...</div>
                 ) : (
                   homeSections.map((section, index) => (
                     <div key={section.key} data-aos="fade-up" data-aos-delay={index * 100}>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-zinc-100">{section.title}</h2>
+                        <h2 className="text-2xl font-bold text-slate-100">{section.title}</h2>
                         <div className="flex items-center gap-4">
                           {section.key === 'surprise' && (
                             <button
                               onClick={() => setRefreshKey((prev) => prev + 1)}
-                              className="text-zinc-500 hover:text-zinc-200 transition-colors text-sm"
+                              className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
                             >
                               Refresh
                             </button>
                           )}
                           <Link
                             href={section.href}
-                            className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm"
+                            className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm"
                           >
                             View All <ChevronRight size={16} />
                           </Link>
@@ -211,7 +211,7 @@ export default function Home() {
                             <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
                           ))
                         ) : (
-                          <div className="text-zinc-500 py-4">No recipes available</div>
+                          <div className="text-slate-500 py-4">No recipes available</div>
                         )}
                       </div>
                     </div>

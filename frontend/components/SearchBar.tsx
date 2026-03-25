@@ -111,7 +111,7 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
         {/* Search Input */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-            <Search className="h-6 w-6 text-zinc-500" />
+            <Search className="h-6 w-6 text-slate-500" />
           </div>
           <input
             ref={inputRef}
@@ -121,13 +121,13 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
             placeholder="Search for dishes, cuisines, ingredients..."
-            className="w-full h-16 pl-16 pr-28 text-lg bg-zinc-900 border-2 border-zinc-800 rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-all shadow-lg"
+            className="w-full h-16 pl-16 pr-28 text-lg bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all shadow-lg"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center gap-2">
             {query && (
               <button
                 onClick={handleClear}
-                className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="p-2 text-slate-500 hover:text-slate-300 transition-colors"
                 aria-label="Clear search"
               >
                 <X size={20} />
@@ -135,7 +135,7 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
             )}
             <button
               onClick={() => handleSearch()}
-              className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold rounded-lg transition-colors"
+              className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold rounded-lg transition-colors"
             >
               Search
             </button>
@@ -144,25 +144,25 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
 
         {/* Auto-Suggestions Dropdown */}
         {showCorrectionPrompt && correctionSuggestion && (
-          <div className="absolute w-full mt-2 bg-zinc-900/95 backdrop-blur border border-emerald-500/40 rounded-xl shadow-2xl z-50 p-4">
+          <div className="absolute w-full mt-2 bg-slate-900/95 backdrop-blur border border-sky-500/40 rounded-xl shadow-2xl z-50 p-4">
             <div className="flex items-start gap-3">
-              <div className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <div className="mt-1 h-2.5 w-2.5 rounded-full bg-sky-400" />
               <div className="flex-1">
-                <p className="text-zinc-100 font-semibold">Possible typo detected</p>
-                <p className="text-sm text-zinc-400 mt-1">
+                <p className="text-slate-100 font-semibold">Possible typo detected</p>
+                <p className="text-sm text-slate-400 mt-1">
                   Did you mean{' '}
-                  <span className="text-emerald-400 font-medium">&quot;{correctionSuggestion}&quot;</span>?
+                  <span className="text-sky-400 font-medium">&quot;{correctionSuggestion}&quot;</span>?
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     onClick={handleApplyCorrection}
-                    className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-sm font-semibold rounded-lg transition-colors"
+                    className="px-3.5 py-2 bg-sky-500 hover:bg-sky-600 text-slate-950 text-sm font-semibold rounded-lg transition-colors"
                   >
                     Use correction
                   </button>
                   <button
                     onClick={handleDismissCorrection}
-                    className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-lg transition-colors"
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors"
                   >
                     Keep my text
                   </button>
@@ -174,7 +174,7 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
 
         {showSuggestions && suggestions.length > 0 && (
           <div
-            className={`absolute w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-40 ${
+            className={`absolute w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-40 ${
               showCorrectionPrompt ? 'mt-[8.75rem]' : 'mt-2'
             }`}
           >
@@ -182,10 +182,10 @@ export default function SearchBar({ onSearch, onClear }: SearchBarProps) {
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-6 py-3 text-left text-zinc-200 hover:bg-zinc-800 hover:text-emerald-400 transition-colors border-b border-zinc-800 last:border-b-0"
+                className="w-full px-6 py-3 text-left text-slate-200 hover:bg-slate-800 hover:text-sky-400 transition-colors border-b border-slate-800 last:border-b-0"
               >
                 <div className="flex items-center gap-3">
-                  <Search size={16} className="text-zinc-500" />
+                  <Search size={16} className="text-slate-500" />
                   <span>{suggestion}</span>
                 </div>
               </button>

@@ -114,19 +114,19 @@ export default function FoldersPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zinc-950 py-12 px-4">
+      <div className="min-h-screen bg-slate-950 py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="mb-8" data-aos="fade-down">
             <div className="flex items-center gap-3 mb-3">
-              <FolderHeart className="text-emerald-400" size={32} />
-              <h1 className="text-4xl font-bold text-zinc-100">
-                Your <span className="text-emerald-400">Food Assemble</span>
+              <FolderHeart className="text-sky-400" size={32} />
+              <h1 className="text-4xl font-bold text-slate-100">
+                Your <span className="text-sky-400">Food Assemble</span>
               </h1>
             </div>
-            <p className="text-zinc-400 text-lg">
+            <p className="text-slate-400 text-lg">
               Organize your recipes into collections and discover AI-powered recommendations
             </p>
-            <p className="text-zinc-500 text-sm mt-2">
+            <p className="text-slate-500 text-sm mt-2">
               {folders.length} folders • {totalBookmarks} bookmarked recipes
             </p>
           </div>
@@ -135,32 +135,32 @@ export default function FoldersPage() {
             {!isCreating ? (
               <button
                 onClick={() => setIsCreating(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold rounded-lg transition-colors"
               >
                 <Plus size={20} />
                 Create New Folder
               </button>
             ) : (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md">
-                <h3 className="text-lg font-bold text-zinc-100 mb-4">Create New Folder</h3>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md">
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Create New Folder</h3>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Folder name"
-                  className="w-full px-4 py-2.5 mb-4 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-2.5 mb-4 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   autoFocus
                 />
                 <div className="flex gap-3">
                   <button
                     onClick={() => void handleCreateFolder()}
-                    className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold rounded-lg transition-colors"
                   >
                     Create
                   </button>
                   <button
                     onClick={() => setIsCreating(false)}
-                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors"
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
@@ -170,7 +170,7 @@ export default function FoldersPage() {
           </div>
 
           {isLoading ? (
-            <div className="text-zinc-400">Loading folders...</div>
+            <div className="text-slate-400">Loading folders...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {folders.map((folder, index) => {
@@ -180,12 +180,12 @@ export default function FoldersPage() {
                     key={folder.id}
                     data-aos="fade-up"
                     data-aos-delay={index * 50}
-                    className="group bg-zinc-900 rounded-xl p-6 border border-zinc-800 hover:border-emerald-500 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10"
+                    className="group bg-slate-900 rounded-xl p-6 border border-slate-800 hover:border-sky-500 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10"
                   >
                     {isEditing ? (
                       <div className="block">
-                        <div className="bg-emerald-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
-                          <FolderHeart className="text-emerald-400" size={28} />
+                        <div className="bg-sky-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                          <FolderHeart className="text-sky-400" size={28} />
                         </div>
 
                         <div className="space-y-2 mb-4">
@@ -193,45 +193,45 @@ export default function FoldersPage() {
                             type="text"
                             value={editFolderName}
                             onChange={(event) => setEditFolderName(event.target.value)}
-                            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-emerald-500"
+                            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-sky-500"
                           />
                         </div>
 
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                          <div className="flex items-center gap-2 text-slate-500 text-sm">
                             <BookmarkCheck size={16} />
                             <span>
                               {(bookmarkCountByFolder[folder.id] || 0)}{' '}
                               {(bookmarkCountByFolder[folder.id] || 0) === 1 ? 'recipe' : 'recipes'}
                             </span>
                           </div>
-                          <ChevronRight className="text-zinc-600 transition-colors" size={20} />
+                          <ChevronRight className="text-slate-600 transition-colors" size={20} />
                         </div>
                       </div>
                     ) : (
                       <Link href={`/folders/${folder.id}`} className="block">
-                        <div className="bg-emerald-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
-                          <FolderHeart className="text-emerald-400" size={28} />
+                        <div className="bg-sky-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                          <FolderHeart className="text-sky-400" size={28} />
                         </div>
 
-                        <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-emerald-400 transition-colors">
+                        <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-sky-400 transition-colors">
                           {folder.name}
                         </h3>
 
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                          <div className="flex items-center gap-2 text-slate-500 text-sm">
                             <BookmarkCheck size={16} />
                             <span>
                               {(bookmarkCountByFolder[folder.id] || 0)}{' '}
                               {(bookmarkCountByFolder[folder.id] || 0) === 1 ? 'recipe' : 'recipes'}
                             </span>
                           </div>
-                          <ChevronRight className="text-zinc-600 group-hover:text-emerald-400 transition-colors" size={20} />
+                          <ChevronRight className="text-slate-600 group-hover:text-sky-400 transition-colors" size={20} />
                         </div>
                       </Link>
                     )}
 
-                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-800">
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800">
                       {isEditing ? (
                         <>
                           <button
@@ -239,7 +239,7 @@ export default function FoldersPage() {
                               event.preventDefault();
                               void handleSaveEdit();
                             }}
-                            className="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 rounded-lg transition-colors text-sm font-semibold"
+                            className="flex-1 px-3 py-2 bg-sky-500 hover:bg-sky-600 text-slate-950 rounded-lg transition-colors text-sm font-semibold"
                           >
                             Save
                           </button>
@@ -248,7 +248,7 @@ export default function FoldersPage() {
                               event.preventDefault();
                               handleCancelEdit();
                             }}
-                            className="flex-1 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
+                            className="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm"
                           >
                             Cancel
                           </button>
@@ -260,7 +260,7 @@ export default function FoldersPage() {
                               event.preventDefault();
                               handleStartEdit(folder);
                             }}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm"
                           >
                             <Edit2 size={14} />
                             Edit
@@ -270,7 +270,7 @@ export default function FoldersPage() {
                               event.preventDefault();
                               void handleDeleteFolder(folder.id);
                             }}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-red-900/50 text-zinc-300 hover:text-red-400 rounded-lg transition-colors text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 rounded-lg transition-colors text-sm"
                           >
                             <Trash2 size={14} />
                             Delete
