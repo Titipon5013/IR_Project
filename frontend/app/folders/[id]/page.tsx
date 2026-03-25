@@ -143,27 +143,27 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-zinc-950 py-12 px-4">
+      <div className="min-h-screen bg-slate-950 py-12 px-4">
         <div className="container mx-auto max-w-7xl">
           <Link
             href="/folders"
-            className="inline-flex items-center gap-2 text-zinc-400 hover:text-emerald-400 transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors mb-6"
           >
             <ChevronLeft size={20} />
             Back to Folders
           </Link>
 
           <div className="mb-8" data-aos="fade-down">
-            <h1 className="text-4xl font-bold text-zinc-100 mb-2">{folder?.name || 'Folder'}</h1>
+            <h1 className="text-4xl font-bold text-slate-100 mb-2">{folder?.name || 'Folder'}</h1>
           </div>
 
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-zinc-100 mb-6">
-              Saved Recipes <span className="text-emerald-400">({folderRecipes.length})</span>
+            <h2 className="text-2xl font-bold text-slate-100 mb-6">
+              Saved Recipes <span className="text-sky-400">({folderRecipes.length})</span>
             </h2>
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 size={36} className="text-emerald-400 animate-spin" />
+                <Loader2 size={36} className="text-sky-400 animate-spin" />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -182,11 +182,11 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
 
           {folderRecipes.length > 0 && (
             <div data-aos="fade-up">
-              <div className="border-t border-zinc-800 pt-12">
+              <div className="border-t border-slate-800 pt-12">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-zinc-100 mb-2 flex items-center gap-3">
-                      <Sparkles className="text-emerald-400" size={28} />
+                    <h2 className="text-2xl font-bold text-slate-100 mb-2 flex items-center gap-3">
+                      <Sparkles className="text-sky-400" size={28} />
                       AI-Powered Suggestions
                     </h2>
                   </div>
@@ -194,7 +194,7 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
                     <button
                       onClick={() => void handleGenerateSuggestions()}
                       disabled={isGenerating}
-                      className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
                     >
                       {isGenerating ? (
                         <>
@@ -216,7 +216,7 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
                     {aiSuggestions.map((recipe, index) => (
                       <div key={recipe.id} data-aos="fade-up" data-aos-delay={index * 100}>
                         <RecipeCard recipe={recipe} onClick={handleRecipeClick} />
-                        <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
+                        <div className="mt-2 flex items-center gap-2 text-xs text-sky-400">
                           <TrendingUp size={12} />
                           <span>AI Match: {Math.max(78, 95 - index * 4)}%</span>
                         </div>
@@ -230,7 +230,7 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
 
           {folderRecipes.length === 0 && (
             <div className="text-center py-20" data-aos="fade-up">
-              <p className="text-zinc-500 text-lg mb-2">This folder is empty</p>
+              <p className="text-slate-500 text-lg mb-2">This folder is empty</p>
             </div>
           )}
         </div>

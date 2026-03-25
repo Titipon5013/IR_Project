@@ -31,7 +31,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+      <body className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
         <AuthProvider>
           <PopupProvider>
             <AosInit />

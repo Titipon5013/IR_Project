@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
-import { ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   getAllRecipesPaginated,
   getCategories,
@@ -28,6 +28,8 @@ export default function Home() {
   const [topTrendingCategory, setTopTrendingCategory] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [trendingScrollState, setTrendingScrollState] = useState({ canLeft: false, canRight: false });
+  const sectionScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -93,6 +95,42 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
+  const updateTrendingScrollState = () => {
+    const container = sectionScrollRefs.current.trending;
+    if (!container) {
+      setTrendingScrollState({ canLeft: false, canRight: false });
+      return;
+    }
+
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setTrendingScrollState({
+      canLeft: container.scrollLeft > 4,
+      canRight: container.scrollLeft < maxScrollLeft - 4,
+    });
+  };
+
+  const handleScroll = (sectionKey: string, direction: 'left' | 'right') => {
+    const container = sectionScrollRefs.current[sectionKey];
+    if (!container) return;
+
+    const distance = Math.max(260, Math.floor(container.clientWidth * 0.8));
+    container.scrollBy({
+      left: direction === 'right' ? distance : -distance,
+      behavior: 'smooth',
+    });
+  };
+
+  useEffect(() => {
+    updateTrendingScrollState();
+
+    const onResize = () => updateTrendingScrollState();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [categoryRecipes.length, isLoading]);
+
   const homeSections = useMemo(
     () => [
       {
@@ -126,18 +164,18 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-slate-950">
       {/* Hero Section */}
-      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-zinc-900 to-zinc-950">
+      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="container mx-auto max-w-5xl text-center">
           <h1
-            className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-zinc-100 to-emerald-400 bg-clip-text text-transparent"
+            className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-slate-100 to-sky-400 bg-clip-text text-transparent"
             data-aos="fade-down"
           >
             Discover Food Assemble
           </h1>
           <p
-            className="text-lg text-zinc-400 mb-8 max-w-2xl mx-auto"
+            className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto"
             data-aos="fade-up"
             data-aos-delay="100"
           >
@@ -157,9 +195,9 @@ export default function Home() {
             /* Search Results Grid */
             <div>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-zinc-100">
+                <h2 className="text-2xl font-bold text-slate-100">
                   Search Results{' '}
-                  <span className="text-emerald-400">({searchResults.length})</span>
+                  <span className="text-sky-400">({searchResults.length})</span>
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -173,7 +211,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="col-span-full text-center py-20">
-                    <p className="text-zinc-500 text-lg">No recipes found</p>
+                    <p className="text-slate-500 text-lg">No recipes found</p>
                   </div>
                 )}
               </div>
@@ -182,36 +220,62 @@ export default function Home() {
             /* Curated Carousels */
               <div className="space-y-12">
                 {isLoading ? (
-                  <div className="text-center py-20 text-zinc-500">Loading recipes...</div>
+                  <div className="text-center py-20 text-slate-500">Loading recipes...</div>
                 ) : (
                   homeSections.map((section, index) => (
                     <div key={section.key} data-aos="fade-up" data-aos-delay={index * 100}>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-zinc-100">{section.title}</h2>
+                        <h2 className="text-2xl font-bold text-slate-100">{section.title}</h2>
                         <div className="flex items-center gap-4">
+                          {section.key === 'trending' && section.recipes.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleScroll(section.key, 'left')}
+                                disabled={!trendingScrollState.canLeft}
+                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Scroll trending recipes to the left"
+                              >
+                                <ChevronLeft size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleScroll(section.key, 'right')}
+                                disabled={!trendingScrollState.canRight}
+                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Scroll trending recipes to the right"
+                              >
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+                          )}
                           {section.key === 'surprise' && (
                             <button
                               onClick={() => setRefreshKey((prev) => prev + 1)}
-                              className="text-zinc-500 hover:text-zinc-200 transition-colors text-sm"
+                              className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
                             >
                               Refresh
                             </button>
                           )}
                           <Link
                             href={section.href}
-                            className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm"
+                            className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm"
                           >
                             View All <ChevronRight size={16} />
                           </Link>
                         </div>
                       </div>
-                      <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                      <div
+                        onScroll={section.key === 'trending' ? updateTrendingScrollState : undefined}
+                        ref={(el) => {
+                          sectionScrollRefs.current[section.key] = el;
+                        }}
+                        className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide"
+                      >
                         {section.recipes.length > 0 ? (
                           section.recipes.map((recipe) => (
                             <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
                           ))
                         ) : (
-                          <div className="text-zinc-500 py-4">No recipes available</div>
+                          <div className="text-slate-500 py-4">No recipes available</div>
                         )}
                       </div>
                     </div>
