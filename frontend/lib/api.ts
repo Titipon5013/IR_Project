@@ -30,6 +30,14 @@ export interface Category {
   count: number;
 }
 
+export interface PaginatedRecipesResponse {
+  results: Recipe[];
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+}
+
 export interface Folder {
   id: string;
   name: string;
@@ -119,6 +127,37 @@ export async function getRecipesByCategory(category: string, limit: number = 20)
 
   const data = await response.json();
   return data.results;
+}
+
+export async function getRecipesByCategoryPaginated(
+  category: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedRecipesResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/recipes/category/${encodeURIComponent(category)}?page=${page}&limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch paginated recipes by category');
+  }
+
+  return response.json();
+}
+
+export async function getAllRecipesPaginated(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedRecipesResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/recipes/all?page=${page}&limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch all recipes');
+  }
+
+  return response.json();
 }
 
 // Get all categories
