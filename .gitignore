@@ -1,2 +1,3 @@
 ﻿*.csv
 *.pkl
+node_modules
