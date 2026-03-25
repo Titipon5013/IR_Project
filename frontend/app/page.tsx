@@ -1,86 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import SearchBar from '@/components/SearchBar';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
 import { ChevronRight } from 'lucide-react';
+import {
+  getCategories,
+  getRandomRecipes,
+  getRecipesByCategory,
+  searchRecipes,
+  toUiRecipe,
+} from '@/lib/api';
 
 export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [personalizedRecipes, setPersonalizedRecipes] = useState<Recipe[]>([]);
+  const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
+  const [randomRecipes, setRandomRecipes] = useState<Recipe[]>([]);
+  const [categoryTitle, setCategoryTitle] = useState('Trending');
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Mock data - replace with actual API calls
-  const mockRecipes: Recipe[] = [
-    {
-      id: '1',
-      name: 'Chicken Tikka Masala',
-      description: 'Creamy tomato-based curry with tender chicken pieces',
-      image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80',
-      cookTime: '45 min',
-      rating: 4.8,
-      category: 'Indian',
-    },
-    {
-      id: '2',
-      name: 'Pad Thai',
-      description: 'Classic Thai stir-fried noodles with shrimp and peanuts',
-      image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&q=80',
-      cookTime: '30 min',
-      rating: 4.6,
-      category: 'Thai',
-    },
-    {
-      id: '3',
-      name: 'Spaghetti Carbonara',
-      description: 'Italian pasta with crispy pancetta and creamy egg sauce',
-      image: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800&q=80',
-      cookTime: '25 min',
-      rating: 4.7,
-      category: 'Italian',
-    },
-    {
-      id: '4',
-      name: 'Beef Tacos',
-      description: 'Seasoned ground beef in soft tortillas with fresh toppings',
-      image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=800&q=80',
-      cookTime: '20 min',
-      rating: 4.5,
-      category: 'Mexican',
-    },
-    {
-      id: '5',
-      name: 'Greek Salad',
-      description: 'Fresh vegetables with feta cheese and olives',
-      image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80',
-      cookTime: '15 min',
-      rating: 4.3,
-      category: 'Greek',
-    },
-    {
-      id: '6',
-      name: 'Ramen Bowl',
-      description: 'Rich broth with noodles, soft-boiled egg, and pork',
-      image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&q=80',
-      cookTime: '60 min',
-      rating: 4.9,
-      category: 'Japanese',
-    },
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [picked, surprise, categories] = await Promise.all([
+          getRandomRecipes(8),
+          getRandomRecipes(8),
+          getCategories(),
+        ]);
 
-  const personalizedRecipes = mockRecipes.slice(0, 4);
-  const categoryRecipes = mockRecipes.filter((r) => r.category === 'Italian' || r.category === 'Thai');
-  const randomRecipes = mockRecipes.slice(2, 6);
+        setPersonalizedRecipes(picked.slice(0, 4).map(toUiRecipe));
+        setRandomRecipes(surprise.slice(0, 4).map(toUiRecipe));
 
-  const handleSearch = (query: string) => {
+        const topCategories = categories.slice(0, 2).map((category) => category.name);
+        if (topCategories.length === 0) {
+          setCategoryRecipes([]);
+          setCategoryTitle('Trending');
+          return;
+        }
+
+        const categoryGroups = await Promise.all(
+          topCategories.map((categoryName) => getRecipesByCategory(categoryName, 6))
+        );
+        const merged = categoryGroups.flat().slice(0, 8).map(toUiRecipe);
+        setCategoryRecipes(merged);
+        setCategoryTitle(`Trending in ${topCategories.join(' & ')}`);
+      } catch {
+        setPersonalizedRecipes([]);
+        setCategoryRecipes([]);
+        setRandomRecipes([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [refreshKey]);
+
+  const handleSearch = async (query: string) => {
     setIsSearching(true);
-    // Mock search results (replace with actual API call)
-    const results = mockRecipes.filter((recipe) =>
-      recipe.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(results);
+    try {
+      const response = await searchRecipes(query, 24);
+      setSearchResults(response.results.map(toUiRecipe));
+    } catch {
+      setSearchResults([]);
+    }
   };
 
   const handleClear = () => {
@@ -92,6 +82,15 @@ export default function Home() {
     setSelectedRecipe(recipe);
     setIsModalOpen(true);
   };
+
+  const homeSections = useMemo(
+    () => [
+      { key: 'picked', title: 'Picked For You', recipes: personalizedRecipes, action: 'View All' },
+      { key: 'trending', title: categoryTitle, recipes: categoryRecipes, action: 'View All' },
+      { key: 'surprise', title: 'Surprise Me', recipes: randomRecipes, action: 'Refresh' },
+    ],
+    [personalizedRecipes, categoryRecipes, randomRecipes, categoryTitle]
+  );
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -148,70 +147,34 @@ export default function Home() {
             </div>
           ) : (
             /* Curated Carousels */
-            <div className="space-y-12">
-              {/* Carousel 1: From Your Folders */}
-              <div data-aos="fade-up">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-zinc-100">
-                    <span className="text-emerald-400">Picked</span> For You
-                  </h2>
-                  <button className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm">
-                    View All <ChevronRight size={16} />
-                  </button>
-                </div>
-                <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
-                  {personalizedRecipes.map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      onClick={handleRecipeClick}
-                    />
-                  ))}
-                </div>
+              <div className="space-y-12">
+                {isLoading ? (
+                  <div className="text-center py-20 text-zinc-500">Loading recipes...</div>
+                ) : (
+                  homeSections.map((section, index) => (
+                    <div key={section.key} data-aos="fade-up" data-aos-delay={index * 100}>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-zinc-100">{section.title}</h2>
+                        <button
+                          onClick={() => section.key === 'surprise' && setRefreshKey((prev) => prev + 1)}
+                          className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm"
+                        >
+                          {section.action} <ChevronRight size={16} />
+                        </button>
+                      </div>
+                      <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                        {section.recipes.length > 0 ? (
+                          section.recipes.map((recipe) => (
+                            <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
+                          ))
+                        ) : (
+                          <div className="text-zinc-500 py-4">No recipes available</div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-
-              {/* Carousel 2: Category Specific */}
-              <div data-aos="fade-up" data-aos-delay="100">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-zinc-100">
-                    <span className="text-emerald-400">Trending</span> in Italian & Thai
-                  </h2>
-                  <button className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm">
-                    View All <ChevronRight size={16} />
-                  </button>
-                </div>
-                <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
-                  {categoryRecipes.map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      onClick={handleRecipeClick}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Carousel 3: Random Discoveries */}
-              <div data-aos="fade-up" data-aos-delay="200">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-zinc-100">
-                    <span className="text-emerald-400">Surprise</span> Me
-                  </h2>
-                  <button className="text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1 text-sm">
-                    Refresh <ChevronRight size={16} />
-                  </button>
-                </div>
-                <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
-                  {randomRecipes.map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      onClick={handleRecipeClick}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </section>
@@ -235,4 +198,3 @@ export default function Home() {
     </div>
   );
 }
-
