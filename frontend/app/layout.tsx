@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AosInit from "@/components/AosInit";
 import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/components/AuthProvider";
+import { PopupProvider } from "@/components/PopupProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FoodVault - Discover & Bookmark Your Favorite Recipes",
+  title: "Food Assemble - Discover & Bookmark Your Favorite Recipes",
   description: "AI-powered food recommendation and bookmarking platform",
 };
 
@@ -30,9 +32,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
-        <AosInit />
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <AuthProvider>
+          <PopupProvider>
+            <AosInit />
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </PopupProvider>
+        </AuthProvider>
       </body>
     </html>
   );

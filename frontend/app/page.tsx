@@ -134,7 +134,7 @@ export default function Home() {
             className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-zinc-100 to-emerald-400 bg-clip-text text-transparent"
             data-aos="fade-down"
           >
-            Discover Your Next Meal
+            Discover Food Assemble
           </h1>
           <p
             className="text-lg text-zinc-400 mb-8 max-w-2xl mx-auto"
