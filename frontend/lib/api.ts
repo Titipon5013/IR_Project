@@ -1,8 +1,8 @@
+import { getSupabaseClient } from '@/lib/supabase/client';
+import type { BookmarkInsert, BookmarkRow, FolderInsert, FolderRow } from '@/types';
+
 // API Base URL - Update this if your backend runs on a different port
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-const FOLDERS_KEY = 'foodvault_folders';
-const BOOKMARKS_KEY = 'foodvault_bookmarks';
 
 export interface Recipe {
   RecipeId: number;
@@ -41,37 +41,23 @@ export interface PaginatedRecipesResponse {
 export interface Folder {
   id: string;
   name: string;
-  description?: string;
-  color: string;
+  createdAt: string;
 }
 
 export interface BookmarkEntry {
+  id: string;
   recipeId: number;
   folderId: string;
   userRating: number;
   createdAt: string;
 }
 
-const defaultFolders: Folder[] = [
-  { id: 'favorites', name: 'Favorites', description: 'The absolute best recipes', color: 'emerald' },
-  { id: 'to-try', name: 'To Try', description: 'Recipes I want to cook soon', color: 'blue' },
-  { id: 'weekend', name: 'Weekend Cooking', description: 'Complex recipes for when I have time', color: 'purple' },
-  { id: 'quick', name: 'Quick Meals', description: 'Simple dishes under 30 minutes', color: 'amber' },
-];
-
-function parseJson<T>(value: string | null, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
+function getSupabaseOrThrow() {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase is not configured');
   }
-}
-
-function ensureBrowser() {
-  if (typeof window === 'undefined') {
-    throw new Error('Local storage is only available in the browser');
-  }
+  return supabase;
 }
 
 export function toUiRecipe(recipe: Recipe): import('@/components/RecipeCard').Recipe {
@@ -224,45 +210,130 @@ export async function classifyRecipe(name: string, ingredients: string): Promise
   return data.predicted_category;
 }
 
-export function getFolders(): Folder[] {
-  ensureBrowser();
-  const stored = parseJson<Folder[]>(window.localStorage.getItem(FOLDERS_KEY), []);
-  if (stored.length > 0) return stored;
-  window.localStorage.setItem(FOLDERS_KEY, JSON.stringify(defaultFolders));
-  return defaultFolders;
+function mapFolderRow(row: FolderRow): Folder {
+  return {
+    id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+  };
 }
 
-export function saveFolders(folders: Folder[]): void {
-  ensureBrowser();
-  window.localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+function mapBookmarkRow(row: BookmarkRow): BookmarkEntry {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id,
+    folderId: row.folder_id,
+    userRating: row.rating,
+    createdAt: row.created_at,
+  };
 }
 
-export function getBookmarks(): BookmarkEntry[] {
-  ensureBrowser();
-  return parseJson<BookmarkEntry[]>(window.localStorage.getItem(BOOKMARKS_KEY), []);
+export async function getFolders(userId: string): Promise<Folder[]> {
+  const supabase = getSupabaseOrThrow();
+  const { data, error } = await supabase
+    .from('folders')
+    .select('id, name, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []).map(mapFolderRow);
 }
 
-export function saveBookmark(entry: BookmarkEntry): void {
-  ensureBrowser();
-  const bookmarks = getBookmarks();
-  const existingIndex = bookmarks.findIndex(
-    (bookmark) => bookmark.recipeId === entry.recipeId && bookmark.folderId === entry.folderId
-  );
+export async function createFolder(userId: string, name: string): Promise<Folder> {
+  const supabase = getSupabaseOrThrow();
+  const payload: FolderInsert = {
+    user_id: userId,
+    name,
+  };
+  const { data, error } = await supabase
+    .from('folders')
+    .insert(payload)
+    .select('id, name, created_at')
+    .single();
 
-  if (existingIndex >= 0) {
-    bookmarks[existingIndex] = entry;
-  } else {
-    bookmarks.push(entry);
+  if (error) throw error;
+  return mapFolderRow(data);
+}
+
+export async function updateFolder(userId: string, folderId: string, name: string): Promise<void> {
+  const supabase = getSupabaseOrThrow();
+  const { error } = await supabase
+    .from('folders')
+    .update({ name })
+    .eq('id', folderId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function deleteFolder(userId: string, folderId: string): Promise<void> {
+  const supabase = getSupabaseOrThrow();
+  const { error: bookmarkDeleteError } = await supabase
+    .from('bookmarks')
+    .delete()
+    .eq('folder_id', folderId)
+    .eq('user_id', userId);
+  if (bookmarkDeleteError) throw bookmarkDeleteError;
+
+  const { error: folderDeleteError } = await supabase
+    .from('folders')
+    .delete()
+    .eq('id', folderId)
+    .eq('user_id', userId);
+  if (folderDeleteError) throw folderDeleteError;
+}
+
+export async function getBookmarks(userId: string): Promise<BookmarkEntry[]> {
+  const supabase = getSupabaseOrThrow();
+  const { data, error } = await supabase
+    .from('bookmarks')
+    .select('id, recipe_id, folder_id, rating, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(mapBookmarkRow);
+}
+
+export async function saveBookmark(
+  userId: string,
+  entry: Omit<BookmarkEntry, 'id'>
+): Promise<BookmarkEntry> {
+  const supabase = getSupabaseOrThrow();
+  const { data: existing, error: findError } = await supabase
+    .from('bookmarks')
+    .select('id, recipe_id, folder_id, rating, created_at')
+    .eq('user_id', userId)
+    .eq('recipe_id', entry.recipeId)
+    .maybeSingle();
+  if (findError) throw findError;
+
+  if (existing) {
+    const { data: updated, error: updateError } = await supabase
+      .from('bookmarks')
+      .update({
+        folder_id: entry.folderId,
+        rating: entry.userRating,
+      })
+      .eq('id', existing.id)
+      .eq('user_id', userId)
+      .select('id, recipe_id, folder_id, rating, created_at')
+      .single();
+    if (updateError) throw updateError;
+    return mapBookmarkRow(updated);
   }
 
-  window.localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
-}
-
-export function deleteFolder(folderId: string): void {
-  ensureBrowser();
-  const folders = getFolders().filter((folder) => folder.id !== folderId);
-  saveFolders(folders);
-
-  const bookmarks = getBookmarks().filter((bookmark) => bookmark.folderId !== folderId);
-  window.localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+  const payload: BookmarkInsert = {
+    user_id: userId,
+    folder_id: entry.folderId,
+    recipe_id: entry.recipeId,
+    rating: entry.userRating,
+  };
+  const { data, error } = await supabase
+    .from('bookmarks')
+    .insert(payload)
+    .select('id, recipe_id, folder_id, rating, created_at')
+    .single();
+  if (error) throw error;
+  return mapBookmarkRow(data);
 }
