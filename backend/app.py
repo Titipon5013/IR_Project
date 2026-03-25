@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 import time
 import re
+import random
 from scipy.sparse import hstack
 
 app = Flask(__name__)
@@ -63,6 +64,16 @@ def generate_snippet(text, query_terms):
         snippet = re.sub(f'({re.escape(term)})', r'<b>\1</b>', snippet, flags=re.IGNORECASE)
 
     return snippet
+
+def serialize_recipe(recipe):
+    return {
+        "RecipeId": int(recipe['RecipeId']),
+        "Name": str(recipe['Name']),
+        "Ingredients": str(recipe['RecipeIngredientParts']),
+        "Instructions": str(recipe['RecipeInstructions']),
+        "Category": str(recipe['RecipeCategory']),
+        "Image": str(recipe['Image_URL'])
+    }
 
 @app.route('/', methods=['GET'])
 def home():
@@ -152,18 +163,96 @@ def get_recipes_by_ids():
 
     matched_recipes = df[df['RecipeId'].isin(recipe_ids)]
 
-    results = []
-    for _, recipe in matched_recipes.iterrows():
-        results.append({
-            "RecipeId": int(recipe['RecipeId']),
-            "Name": str(recipe['Name']),
-            "Ingredients": str(recipe['RecipeIngredientParts']),
-            "Instructions": str(recipe['RecipeInstructions']),
-            "Category": str(recipe['RecipeCategory']),
-            "Image": str(recipe['Image_URL'])
-        })
+    results = [serialize_recipe(recipe) for _, recipe in matched_recipes.iterrows()]
 
     return jsonify({"results": results})
+
+@app.route('/api/recipes/random', methods=['GET'])
+def get_random_recipes():
+    limit = int(request.args.get('limit', 20))
+    if limit <= 0:
+        return jsonify({"results": []})
+
+    sample_size = min(limit, len(df))
+    sampled_indices = random.sample(range(len(df)), sample_size)
+    sampled_recipes = df.iloc[sampled_indices]
+
+    results = [serialize_recipe(recipe) for _, recipe in sampled_recipes.iterrows()]
+    return jsonify({"results": results, "total": len(results)})
+
+@app.route('/api/recipes/all', methods=['GET'])
+def get_all_recipes():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    sort = request.args.get('sort', 'asc').lower()
+
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 20
+
+    ordered = df.sort_values('RecipeId', ascending=(sort != 'desc'))
+    total = len(ordered)
+    total_pages = (total + limit - 1) // limit
+
+    start = (page - 1) * limit
+    end = start + limit
+    paged = ordered.iloc[start:end]
+
+    results = [serialize_recipe(recipe) for _, recipe in paged.iterrows()]
+    return jsonify({
+        "results": results,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "total_pages": total_pages
+    })
+
+@app.route('/api/recipes/category/<path:category>', methods=['GET'])
+def get_recipes_by_category(category):
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 20
+
+    filtered = df[df['RecipeCategory'].str.lower() == category.lower()]
+    if filtered.empty:
+        return jsonify({"results": [], "category": category, "total": 0, "total_pages": 0, "page": page, "limit": limit})
+
+    total = len(filtered)
+    total_pages = (total + limit - 1) // limit
+    start = (page - 1) * limit
+    end = start + limit
+    paged = filtered.iloc[start:end]
+
+    results = [serialize_recipe(recipe) for _, recipe in paged.iterrows()]
+    return jsonify({
+        "results": results,
+        "category": category,
+        "total": total,
+        "total_pages": total_pages,
+        "page": page,
+        "limit": limit
+    })
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    category_counts = (
+        df['RecipeCategory']
+        .fillna('Unknown')
+        .value_counts()
+        .reset_index()
+    )
+    category_counts.columns = ['name', 'count']
+
+    categories = [
+        {"name": str(row['name']), "count": int(row['count'])}
+        for _, row in category_counts.iterrows()
+    ]
+    return jsonify({"categories": categories})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
