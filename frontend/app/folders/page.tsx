@@ -12,6 +12,9 @@ export default function FoldersPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editFolderName, setEditFolderName] = useState('');
+  const [editFolderDescription, setEditFolderDescription] = useState('');
 
   useEffect(() => {
     const storedFolders = getFolders();
@@ -57,6 +60,32 @@ export default function FoldersPage() {
       delete nextCounts[id];
       setBookmarkCountByFolder(nextCounts);
     }
+  };
+
+  const handleStartEdit = (folder: Folder) => {
+    setEditingFolderId(folder.id);
+    setEditFolderName(folder.name);
+    setEditFolderDescription(folder.description || '');
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingFolderId || !editFolderName.trim()) return;
+    const nextFolders = folders.map((folder) =>
+      folder.id === editingFolderId
+        ? { ...folder, name: editFolderName.trim(), description: editFolderDescription.trim() }
+        : folder
+    );
+    setFolders(nextFolders);
+    saveFolders(nextFolders);
+    setEditingFolderId(null);
+    setEditFolderName('');
+    setEditFolderDescription('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingFolderId(null);
+    setEditFolderName('');
+    setEditFolderDescription('');
   };
 
   const getColorClasses = (color: string) => {
@@ -158,6 +187,7 @@ export default function FoldersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {folders.map((folder, index) => {
             const colorClasses = getColorClasses(folder.color);
+            const isEditing = editingFolderId === folder.id;
             return (
               <div
                 key={folder.id}
@@ -165,58 +195,120 @@ export default function FoldersPage() {
                 data-aos-delay={index * 50}
                 className={`group bg-zinc-900 rounded-xl p-6 border ${colorClasses.border} ${colorClasses.hover} transition-all duration-300 hover:shadow-lg hover:shadow-${folder.color}-500/10`}
               >
-                <Link href={`/folders/${folder.id}`} className="block">
-                  {/* Folder Icon */}
-                  <div className={`${colorClasses.bg} w-14 h-14 rounded-lg flex items-center justify-center mb-4`}>
-                    <FolderHeart className={colorClasses.text} size={28} />
-                  </div>
+                {isEditing ? (
+                  <div className="block">
+                    {/* Folder Icon */}
+                    <div className={`${colorClasses.bg} w-14 h-14 rounded-lg flex items-center justify-center mb-4`}>
+                      <FolderHeart className={colorClasses.text} size={28} />
+                    </div>
 
-                  {/* Folder Info */}
-                  <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-emerald-400 transition-colors">
-                    {folder.name}
-                  </h3>
-                  {folder.description && (
-                    <p className="text-sm text-zinc-400 mb-4 line-clamp-2">
-                      {folder.description}
-                    </p>
-                  )}
+                    {/* Folder Info */}
+                    <div className="space-y-2 mb-4">
+                      <input
+                        type="text"
+                        value={editFolderName}
+                        onChange={(event) => setEditFolderName(event.target.value)}
+                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-emerald-500"
+                      />
+                      <input
+                        type="text"
+                        value={editFolderDescription}
+                        onChange={(event) => setEditFolderDescription(event.target.value)}
+                        placeholder="Description (optional)"
+                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-zinc-500 text-sm">
-                      <BookmarkCheck size={16} />
+                    {/* Stats */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                        <BookmarkCheck size={16} />
                         <span>
                           {(bookmarkCountByFolder[folder.id] || 0)}{' '}
                           {(bookmarkCountByFolder[folder.id] || 0) === 1 ? 'recipe' : 'recipes'}
                         </span>
                       </div>
-                    <ChevronRight className="text-zinc-600 group-hover:text-emerald-400 transition-colors" size={20} />
+                      <ChevronRight className="text-zinc-600 transition-colors" size={20} />
+                    </div>
                   </div>
-                </Link>
+                ) : (
+                  <Link href={`/folders/${folder.id}`} className="block">
+                    {/* Folder Icon */}
+                    <div className={`${colorClasses.bg} w-14 h-14 rounded-lg flex items-center justify-center mb-4`}>
+                      <FolderHeart className={colorClasses.text} size={28} />
+                    </div>
+
+                    {/* Folder Info */}
+                    <h3 className="text-xl font-bold text-zinc-100 mb-2 group-hover:text-emerald-400 transition-colors">
+                      {folder.name}
+                    </h3>
+                    {folder.description && (
+                      <p className="text-sm text-zinc-400 mb-4 line-clamp-2">
+                        {folder.description}
+                      </p>
+                    )}
+
+                    {/* Stats */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                        <BookmarkCheck size={16} />
+                        <span>
+                          {(bookmarkCountByFolder[folder.id] || 0)}{' '}
+                          {(bookmarkCountByFolder[folder.id] || 0) === 1 ? 'recipe' : 'recipes'}
+                        </span>
+                      </div>
+                      <ChevronRight className="text-zinc-600 group-hover:text-emerald-400 transition-colors" size={20} />
+                    </div>
+                  </Link>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-800">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      // TODO: Implement edit functionality
-                      alert('Edit folder: ' + folder.name);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
-                  >
-                    <Edit2 size={14} />
-                    Edit
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDeleteFolder(folder.id);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-red-900/50 text-zinc-300 hover:text-red-400 rounded-lg transition-colors text-sm"
-                  >
-                    <Trash2 size={14} />
-                    Delete
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleSaveEdit();
+                        }}
+                        className="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 rounded-lg transition-colors text-sm font-semibold"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleCancelEdit();
+                        }}
+                        className="flex-1 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleStartEdit(folder);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
+                      >
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleDeleteFolder(folder.id);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-red-900/50 text-zinc-300 hover:text-red-400 rounded-lg transition-colors text-sm"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
