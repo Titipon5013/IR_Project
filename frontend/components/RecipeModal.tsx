@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { X, Bookmark, Star, FolderHeart } from 'lucide-react';
 import type { Recipe } from './RecipeCard';
 import { getBookmarks, getFolders, saveBookmark } from '@/lib/api';
+import { usePopup } from './PopupProvider';
+import { useAuth } from './AuthProvider';
 
 interface RecipeModalProps {
   recipe: Recipe | null;
@@ -18,6 +20,8 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
   const [selectedFolder, setSelectedFolder] = useState('');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [folders, setFolders] = useState<{ id: string; name: string }[]>([]);
+  const { showMessage } = usePopup();
+  const { user } = useAuth();
 
   const ingredients = recipe?.ingredients
     ? recipe.ingredients
@@ -46,38 +50,62 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !recipe) return;
-    const availableFolders = getFolders().map((folder) => ({ id: folder.id, name: folder.name }));
-    setFolders(availableFolders);
-    if (availableFolders.length > 0) {
-      setSelectedFolder((prev) => prev || availableFolders[0].id);
-    }
+    if (!isOpen || !recipe || !user) return;
 
-    const existing = getBookmarks().find((bookmark) => bookmark.recipeId === recipe.id);
-    if (existing) {
-      setRating(existing.userRating);
-      setSelectedFolder(existing.folderId);
-      setIsBookmarked(true);
-    } else {
-      setRating(0);
-      setIsBookmarked(false);
-    }
-  }, [isOpen, recipe]);
+    let isMounted = true;
+    const loadUserData = async () => {
+      const [availableFolders, existingBookmarks] = await Promise.all([
+        getFolders(user.id),
+        getBookmarks(user.id),
+      ]);
+      if (!isMounted) return;
+
+      const folderOptions = availableFolders.map((folder) => ({ id: folder.id, name: folder.name }));
+      setFolders(folderOptions);
+      if (folderOptions.length > 0) {
+        setSelectedFolder((prev) => prev || folderOptions[0].id);
+      }
+
+      const existing = existingBookmarks.find((bookmark) => bookmark.recipeId === recipe.id);
+      if (existing) {
+        setRating(existing.userRating);
+        setSelectedFolder(existing.folderId);
+        setIsBookmarked(true);
+      } else {
+        setRating(0);
+        setIsBookmarked(false);
+      }
+    };
+
+    void loadUserData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, recipe, user]);
 
   if (!isOpen || !recipe) return null;
 
-  const handleBookmark = () => {
-    if (!selectedFolder) {
-      alert('Please select a folder first');
+  const handleBookmark = async () => {
+    if (!user) {
+      showMessage('Please login before bookmarking', 'error');
       return;
     }
-    saveBookmark({
-      recipeId: recipe.id,
-      folderId: selectedFolder,
-      userRating: rating || 0,
-      createdAt: new Date().toISOString(),
-    });
-    setIsBookmarked(true);
+    if (!selectedFolder) {
+      showMessage('Please select a folder first', 'error');
+      return;
+    }
+    try {
+      await saveBookmark(user.id, {
+        recipeId: recipe.id,
+        folderId: selectedFolder,
+        userRating: rating || 0,
+        createdAt: new Date().toISOString(),
+      });
+      setIsBookmarked(true);
+      showMessage('Recipe bookmarked successfully', 'success');
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : 'Failed to bookmark recipe', 'error');
+    }
   };
 
   return (

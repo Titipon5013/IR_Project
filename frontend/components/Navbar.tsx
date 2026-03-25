@@ -1,15 +1,21 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Search, FolderHeart, Bookmark, LogIn, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { useAuth } from './AuthProvider';
+import { SUPABASE_CONFIG_HINTS } from '@/lib/supabase/constants';
+import { usePopup } from './PopupProvider';
+import GoogleIcon from './GoogleIcon';
 
 export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, signInWithGoogle, signOut, isAuthEnabled } = useAuth();
+  const { showMessage } = usePopup();
+  const [mounted, setMounted] = useState(false);
 
-  const handleAuth = () => {
-    setIsLoggedIn(!isLoggedIn);
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800">
@@ -20,7 +26,7 @@ export default function Navbar() {
             href="/"
             className="text-2xl font-bold bg-gradient-to-r from-zinc-100 to-emerald-400 bg-clip-text text-transparent hover:from-emerald-400 hover:to-emerald-500 transition-all"
           >
-            FoodVault
+            Food Assemble
           </Link>
 
           {/* Navigation Links */}
@@ -50,22 +56,48 @@ export default function Navbar() {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              <button
-                onClick={handleAuth}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
-              >
-                <LogOut size={18} />
-                <span>Logout</span>
-              </button>
+            {isAuthEnabled && user ? (
+              <>
+                <span className="hidden sm:inline text-sm text-zinc-300 max-w-[220px] truncate" title={user.email ?? ''}>
+                  {user.email ?? '-'}
+                </span>
+                <button
+                  onClick={() => void signOut()}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
+                >
+                  <LogOut size={18} />
+                  <span>Logout</span>
+                </button>
+              </>
             ) : (
-              <button
-                onClick={handleAuth}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-medium rounded-lg transition-colors"
-              >
-                <LogIn size={18} />
-                <span>Login</span>
-              </button>
+              <>
+                <Link
+                  href="/auth"
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-medium rounded-lg transition-colors"
+                >
+                  <LogIn size={18} />
+                  <span>{mounted && !isAuthEnabled ? 'Configure Auth' : 'Login'}</span>
+                </Link>
+                {isAuthEnabled && (
+                  <button
+                    onClick={() => void signInWithGoogle()}
+                    className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg transition-colors"
+                  >
+                    <GoogleIcon className="h-4 w-4" />
+                    <span>Google</span>
+                  </button>
+                )}
+                {!isAuthEnabled && mounted && (
+                  <button
+                    onClick={() => {
+                      showMessage(`Set env first: ${SUPABASE_CONFIG_HINTS.join(' | ')}`, 'info');
+                    }}
+                    className="hidden sm:inline-flex items-center px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors text-sm"
+                  >
+                    Env help
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
