@@ -122,18 +122,33 @@ def classify_recipe():
 @app.route('/api/suggest', methods=['GET'])
 def suggest():
     query = request.args.get('q', '').lower().strip()
-    if not query or len(query) < 2:
+
+    if not query:
         return jsonify({"suggestions": [], "is_typo": False})
 
     response = es.search(
         index=INDEX_NAME,
         body={
             "query": {
-                "match": {
-                    "Name": {
-                        "query": query,
-                        "fuzziness": "AUTO"
-                    }
+                "bool": {
+                    "should": [
+                        {
+                            "match_phrase_prefix": {
+                                "Name": {
+                                    "query": query,
+                                    "max_expansions": 10  # หาคำที่ขึ้นต้นด้วยตัวอักษรนี้
+                                }
+                            }
+                        },
+                        {
+                            "match": {
+                                "Name": {
+                                    "query": query,
+                                    "fuzziness": "AUTO"  # เผื่อพิมพ์ผิด
+                                }
+                            }
+                        }
+                    ]
                 }
             },
             "_source": ["Name"],
@@ -141,8 +156,16 @@ def suggest():
         }
     )
 
-    suggestions = [hit["_source"]["Name"] for hit in response["hits"]["hits"]]
-    is_typo = len(suggestions) > 0 and query not in [s.lower() for s in suggestions]
+    suggestions = []
+    for hit in response["hits"]["hits"]:
+        name = hit["_source"]["Name"]
+        if name not in suggestions:
+            suggestions.append(name)
+
+    is_typo = False
+    if suggestions:
+        is_sub_string = any(query in s.lower() for s in suggestions)
+        is_typo = not is_sub_string
 
     return jsonify({"suggestions": suggestions, "is_typo": is_typo})
 
