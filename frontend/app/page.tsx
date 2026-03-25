@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
-import { ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   getAllRecipesPaginated,
   getCategories,
@@ -28,6 +28,8 @@ export default function Home() {
   const [topTrendingCategory, setTopTrendingCategory] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [trendingScrollState, setTrendingScrollState] = useState({ canLeft: false, canRight: false });
+  const sectionScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -92,6 +94,42 @@ export default function Home() {
     setSelectedRecipe(recipe);
     setIsModalOpen(true);
   };
+
+  const updateTrendingScrollState = () => {
+    const container = sectionScrollRefs.current.trending;
+    if (!container) {
+      setTrendingScrollState({ canLeft: false, canRight: false });
+      return;
+    }
+
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setTrendingScrollState({
+      canLeft: container.scrollLeft > 4,
+      canRight: container.scrollLeft < maxScrollLeft - 4,
+    });
+  };
+
+  const handleScroll = (sectionKey: string, direction: 'left' | 'right') => {
+    const container = sectionScrollRefs.current[sectionKey];
+    if (!container) return;
+
+    const distance = Math.max(260, Math.floor(container.clientWidth * 0.8));
+    container.scrollBy({
+      left: direction === 'right' ? distance : -distance,
+      behavior: 'smooth',
+    });
+  };
+
+  useEffect(() => {
+    updateTrendingScrollState();
+
+    const onResize = () => updateTrendingScrollState();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [categoryRecipes.length, isLoading]);
 
   const homeSections = useMemo(
     () => [
@@ -189,6 +227,26 @@ export default function Home() {
                       <div className="flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-slate-100">{section.title}</h2>
                         <div className="flex items-center gap-4">
+                          {section.key === 'trending' && section.recipes.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleScroll(section.key, 'left')}
+                                disabled={!trendingScrollState.canLeft}
+                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Scroll trending recipes to the left"
+                              >
+                                <ChevronLeft size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleScroll(section.key, 'right')}
+                                disabled={!trendingScrollState.canRight}
+                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Scroll trending recipes to the right"
+                              >
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+                          )}
                           {section.key === 'surprise' && (
                             <button
                               onClick={() => setRefreshKey((prev) => prev + 1)}
@@ -205,7 +263,13 @@ export default function Home() {
                           </Link>
                         </div>
                       </div>
-                      <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                      <div
+                        onScroll={section.key === 'trending' ? updateTrendingScrollState : undefined}
+                        ref={(el) => {
+                          sectionScrollRefs.current[section.key] = el;
+                        }}
+                        className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide"
+                      >
                         {section.recipes.length > 0 ? (
                           section.recipes.map((recipe) => (
                             <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
