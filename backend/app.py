@@ -175,8 +175,13 @@ def suggest():
 
     is_typo = False
     if suggestions:
-        is_sub_string = any(query in s.lower() for s in suggestions)
-        is_typo = not is_sub_string
+        normalized_suggestions = [s.lower() for s in suggestions]
+        has_exact_match = query in normalized_suggestions
+
+        best_suggestion = normalized_suggestions[0]
+        is_prefix_typing = best_suggestion.startswith(query)
+
+        is_typo = (not has_exact_match) and (not is_prefix_typing)
 
     return jsonify({"suggestions": suggestions, "is_typo": is_typo})
 
@@ -225,22 +230,41 @@ def get_random_recipes():
 
 @app.route('/api/recipes/category/<path:category>', methods=['GET'])
 def get_recipes_by_category(category):
+    page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 20))
+
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 20
+
+    start = (page - 1) * limit
 
     response = es.search(
         index=INDEX_NAME,
         body={
+            "track_total_hits": True,
             "query": {
                 "match_phrase": {
                     "RecipeCategory": category
                 }
             },
+            "from": start,
             "size": limit
         }
     )
 
+    total = response["hits"]["total"]["value"]
+    total_pages = (total + limit - 1) // limit if total > 0 else 1
     results = [serialize_es_recipe(hit) for hit in response["hits"]["hits"]]
-    return jsonify({"results": results, "category": category, "total": len(results)})
+    return jsonify({
+        "results": results,
+        "category": category,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "total_pages": total_pages,
+    })
 
 @app.route('/api/recipes/all', methods=['GET'])
 def get_all_recipes():
@@ -255,6 +279,7 @@ def get_all_recipes():
     response = es.search(
         index=INDEX_NAME,
         body={
+            "track_total_hits": True,
             "query": {"match_all": {}},
             "sort": [{"RecipeId": {"order": sort}}],
             "from": start,
