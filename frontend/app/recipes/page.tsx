@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
 import {
   getAllRecipesPaginated,
   getCategories,
+  getPersonalizedRecommendations,
   getRandomRecipes,
   getRecipesByCategoryPaginated,
   toUiRecipe,
@@ -30,6 +32,7 @@ function clampPage(value: number): number {
 }
 
 export default function RecipesPage() {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const section = normalizeSection(searchParams.get('section'));
@@ -78,6 +81,10 @@ export default function RecipesPage() {
   useEffect(() => {
     let isMounted = true;
     const loadPage = async () => {
+      if (section === 'picked' && isAuthLoading) {
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -91,7 +98,25 @@ export default function RecipesPage() {
           return;
         }
 
-        if (section === 'picked' || section === 'surprise') {
+        if (section === 'picked') {
+          if (!user) {
+            if (!isMounted) return;
+            setRecipes([]);
+            setTotalResults(0);
+            setTotalPages(1);
+            setError('Please sign in to view your personalized recommendations.');
+            return;
+          }
+
+          const response = await getPersonalizedRecommendations(user.id, PAGE_SIZE);
+          if (!isMounted) return;
+          setRecipes(response.results.map(toUiRecipe));
+          setTotalResults(response.results.length);
+          setTotalPages(1);
+          return;
+        }
+
+        if (section === 'surprise') {
           const random = await getRandomRecipes(PAGE_SIZE);
           if (!isMounted) return;
           setRecipes(random.map(toUiRecipe));
@@ -129,7 +154,7 @@ export default function RecipesPage() {
     return () => {
       isMounted = false;
     };
-  }, [section, category, page]);
+  }, [section, category, page, user, isAuthLoading]);
 
   const sectionTitle = useMemo(() => {
     if (section === 'picked') return 'Picked For You';
@@ -157,7 +182,7 @@ export default function RecipesPage() {
   };
 
   const canGoPrev = page > 1;
-  const canGoNext = page < totalPages || section === 'picked' || section === 'surprise';
+  const canGoNext = page < totalPages || section === 'surprise';
 
   return (
     <div className="min-h-screen bg-slate-950 py-12 px-4">

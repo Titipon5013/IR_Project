@@ -49,6 +49,8 @@ export default function Home() {
   const [isPickedPersonalized, setIsPickedPersonalized] = useState<boolean | null>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshPickedKey, setRefreshPickedKey] = useState(0);
+
   const trendingRowRef = useRef<HTMLDivElement>(null);
   const [trendingScrollState, setTrendingScrollState] = useState({ canLeft: false, canRight: false });
 
@@ -128,6 +130,7 @@ export default function Home() {
     };
   }, [trendingRecipes.length, isTrendingLoading]);
 
+  // 🚀 เพิ่ม refreshPickedKey เข้าไปใน dependency array เพื่อให้โหลดข้อมูลใหม่
   useEffect(() => {
     if (isAuthLoading) return;
 
@@ -164,7 +167,7 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthLoading, user]);
+  }, [isAuthLoading, user, refreshPickedKey]); // <--- เพิ่มตรงนี้
 
   const handleSearch = async (query: string) => {
     setIsSearching(true);
@@ -380,7 +383,10 @@ export default function Home() {
       <RecipeModal
         recipe={selectedRecipe}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setRefreshPickedKey((prev) => prev + 1);
+        }}
       />
 
       <style jsx global>{`
