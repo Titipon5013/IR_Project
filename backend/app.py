@@ -386,20 +386,59 @@ def get_trending():
 @app.route('/api/recommend/ml', methods=['POST'])
 def recommend_ml():
     user_id = request.json.get('user_id')
+    recent_bookmarks = request.json.get('recent_bookmarks', [])  # รับ Array ของ RecipeId ที่เพิ่งกด
     limit = int(request.args.get('limit', 10))
 
-    if not user_id or user_id not in user_id_to_index:
-        top_ids = trending_recipe_ids[:limit]
-        is_personalized = False
-    else:
+    top_ids = []
+    is_personalized = False
+
+    if user_id and user_id in user_id_to_index:
         user_idx = user_id_to_index[user_id]
         user_vector = user_factors[user_idx]
-
         predictions = np.dot(user_vector, item_factors)
-
         top_item_indices = np.argsort(predictions)[::-1][:limit]
         top_ids = [svd_recipe_ids[i] for i in top_item_indices]
         is_personalized = True
+
+    # 2. ถ้าเป็น User ใหม่ แต่มี Bookmark (Real-time update)
+    elif recent_bookmarks:
+        # ใช้ More Like This ของ Elasticsearch เดาใจจาก Bookmark ล่าสุด
+        id_response = es.search(
+            index=INDEX_NAME,
+            body={
+                "query": {"terms": {"RecipeId": recent_bookmarks}},
+                "_source": False,
+                "size": len(recent_bookmarks)
+            }
+        )
+        es_ids = [{"_index": INDEX_NAME, "_id": hit["_id"]} for hit in id_response["hits"]["hits"]]
+
+        if es_ids:
+            mlt_response = es.search(
+                index=INDEX_NAME,
+                body={
+                    "query": {
+                        "more_like_this": {
+                            "fields": ["Name", "RecipeIngredientParts", "RecipeCategory"],
+                            "like": es_ids,
+                            "min_term_freq": 1,
+                            "max_query_terms": 25
+                        }
+                    },
+                    "size": limit
+                }
+            )
+            hits = mlt_response["hits"]["hits"]
+            results = [serialize_es_recipe(hit) for hit in hits]
+
+            return jsonify({
+                "results": results,
+                "is_personalized": True
+            })
+
+    if not top_ids:
+        top_ids = trending_recipe_ids[:limit]
+        is_personalized = False
 
     response = es.search(
         index=INDEX_NAME,
