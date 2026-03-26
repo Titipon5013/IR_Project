@@ -35,6 +35,11 @@ export interface SuggestionResponse {
   isTypo: boolean;
 }
 
+export interface RecommendMlResponse {
+  results: Recipe[];
+  isPersonalized: boolean;
+}
+
 export interface PaginatedRecipesResponse {
   results: Recipe[];
   page: number;
@@ -184,6 +189,40 @@ export async function getSuggestions(query: string): Promise<SuggestionResponse>
   return {
     suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
     isTypo: Boolean(data.is_typo),
+  };
+}
+
+export async function getTrendingRecipes(limit: number = 8): Promise<Recipe[]> {
+  const response = await fetch(`${API_BASE_URL}/api/trending?limit=${limit}`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch trending recipes');
+  }
+
+  const data = await response.json();
+  return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function getPersonalizedRecommendations(
+  userId: string,
+  limit: number = 8
+): Promise<RecommendMlResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/recommend/ml?limit=${limit}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch personalized recommendations');
+  }
+
+  const data = await response.json();
+  return {
+    results: Array.isArray(data.results) ? data.results : [],
+    isPersonalized: Boolean(data.is_personalized),
   };
 }
 
