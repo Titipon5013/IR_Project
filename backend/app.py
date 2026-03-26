@@ -6,6 +6,7 @@ import re
 from scipy.sparse import hstack
 from elasticsearch import Elasticsearch
 import urllib3
+import numpy as np
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -26,6 +27,16 @@ with open('models/recipe_classifier.pkl', 'rb') as f:
     tfidf_body = classifier_data['tfidf_body']
     tfidf_char = classifier_data['tfidf_char']
 
+with open('models/svd_recommender.pkl', 'rb') as f:
+    svd_data = pickle.load(f)
+    user_factors = svd_data['user_factors']
+    item_factors = svd_data['item_factors']
+    svd_user_ids = svd_data['user_ids']
+    svd_recipe_ids = svd_data['recipe_ids']
+    user_id_to_index = {uid: idx for idx, uid in enumerate(svd_user_ids)}
+
+with open('models/trending_recipe_ids.pkl', 'rb') as f:
+    trending_recipe_ids = pickle.load(f)
 
 def serialize_es_recipe(hit):
     source = hit["_source"]
@@ -326,6 +337,61 @@ def recommend_recipes():
     results = [serialize_es_recipe(hit) for hit in mlt_response["hits"]["hits"]]
     return jsonify({"results": results})
 
+
+@app.route('/api/trending', methods=['GET'])
+def get_trending():
+    limit = int(request.args.get('limit', 10))
+    top_ids = trending_recipe_ids[:limit]
+
+    response = es.search(
+        index=INDEX_NAME,
+        body={
+            "query": {"terms": {"RecipeId": top_ids}},
+            "size": limit
+        }
+    )
+
+    hits = response["hits"]["hits"]
+    results_dict = {hit["_source"]["RecipeId"]: serialize_es_recipe(hit) for hit in hits}
+    results = [results_dict[rid] for rid in top_ids if rid in results_dict]
+
+    return jsonify({"results": results})
+
+
+@app.route('/api/recommend/ml', methods=['POST'])
+def recommend_ml():
+    user_id = request.json.get('user_id')
+    limit = int(request.args.get('limit', 10))
+
+    if not user_id or user_id not in user_id_to_index:
+        top_ids = trending_recipe_ids[:limit]
+        is_personalized = False
+    else:
+        user_idx = user_id_to_index[user_id]
+        user_vector = user_factors[user_idx]
+
+        predictions = np.dot(user_vector, item_factors)
+
+        top_item_indices = np.argsort(predictions)[::-1][:limit]
+        top_ids = [svd_recipe_ids[i] for i in top_item_indices]
+        is_personalized = True
+
+    response = es.search(
+        index=INDEX_NAME,
+        body={
+            "query": {"terms": {"RecipeId": [int(rid) for rid in top_ids]}},
+            "size": limit
+        }
+    )
+
+    hits = response["hits"]["hits"]
+    results_dict = {hit["_source"]["RecipeId"]: serialize_es_recipe(hit) for hit in hits}
+    results = [results_dict[int(rid)] for rid in top_ids if int(rid) in results_dict]
+
+    return jsonify({
+        "results": results,
+        "is_personalized": is_personalized
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
