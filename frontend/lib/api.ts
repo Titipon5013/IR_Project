@@ -31,8 +31,13 @@ export interface Category {
 }
 
 export interface SuggestionResponse {
-  suggestions: string[];
+  suggestions: SuggestionItem[];
   isTypo: boolean;
+}
+
+export interface SuggestionItem {
+  Name: string;
+  HighlightedName?: string;
 }
 
 export interface RecommendMlResponse {
@@ -169,8 +174,10 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 // Get auto-suggestions
+// ในไฟล์ api.ts (ลบฟังก์ชัน getSuggestions เดิมแล้วแปะอันนี้แทน)
+
 export async function getSuggestions(query: string): Promise<SuggestionResponse> {
-  if (query.length < 2) {
+  if (query.trim().length < 1) {
     return {
       suggestions: [],
       isTypo: false,
@@ -186,8 +193,33 @@ export async function getSuggestions(query: string): Promise<SuggestionResponse>
   }
 
   const data = await response.json();
+
+  const normalizedSuggestions: SuggestionItem[] = Array.isArray(data.suggestions)
+    ? data.suggestions
+        .map((item: any): SuggestionItem | null => {
+          // ถ้า item เป็น string ธรรมดา (กรณีปกติ)
+          if (typeof item === 'string') {
+            const name = item.trim();
+            if (!name) return null;
+            
+            // สร้าง Highlight เองเลย! (ทำตัวหนาสีฟ้าให้ส่วนที่ตรงกับคำค้นหา)
+            // ใช้ Regex แบบ case-insensitive ในการคลุม <b>
+            const regex = new RegExp(`(${query})`, 'gi');
+            const highlighted = name.replace(regex, "<b class='text-sky-400'>$1</b>");
+            
+            return {
+              Name: name,
+              HighlightedName: highlighted,
+            };
+          }
+          
+          return null;
+        })
+        .filter((item: SuggestionItem | null): item is SuggestionItem => item !== null)
+    : [];
+
   return {
-    suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+    suggestions: normalizedSuggestions,
     isTypo: Boolean(data.is_typo),
   };
 }
