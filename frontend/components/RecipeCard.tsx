@@ -20,6 +20,16 @@ interface RecipeCardProps {
   onClick: (recipe: Recipe) => void;
 }
 
+const cleanHtmlContent = (text?: string) => {
+  if (!text) return '';
+  return text
+    .replace(/^c\(\s*["']/g, '')
+    .replace(/["']\s*\)$/g, '')
+    .replace(/^\[\s*["']/g, '')
+    .replace(/["']\s*\]$/g, '')
+    .replace(/className=/g, 'class=');
+};
+
 export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
   return (
     <div
@@ -31,7 +41,8 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
       <div className="relative h-48 w-full overflow-hidden bg-slate-800">
         <Image
           src={recipe.image}
-          alt={recipe.name}
+          // ลบแท็ก HTML ออกจาก alt ป้องกันการโชว์ตัวอักษรแปลกๆ ในรูป
+          alt={recipe.name.replace(/<[^>]+>/g, '')} 
           fill
           unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -46,12 +57,14 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="text-lg font-bold text-slate-100 mb-2 line-clamp-1 group-hover:text-sky-400 transition-colors">
-          {recipe.name}
-        </h3>
-        <p className="text-sm text-slate-400 mb-3 line-clamp-2">
-          {recipe.description}
-        </p>
+        <h3 
+          className="text-lg font-bold text-slate-100 mb-2 line-clamp-1 group-hover:text-sky-400 transition-colors"
+          dangerouslySetInnerHTML={{ __html: cleanHtmlContent(recipe.name) }}
+        />
+        <p 
+          className="text-sm text-slate-400 mb-3 line-clamp-2"
+          dangerouslySetInnerHTML={{ __html: cleanHtmlContent(recipe.description) }}
+        />
 
         {/* Meta Info */}
         <div className="flex items-center justify-between text-xs text-slate-500">

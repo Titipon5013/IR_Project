@@ -14,6 +14,17 @@ interface RecipeModalProps {
   onClose: () => void;
 }
 
+// 🚀 เพิ่มฟังก์ชันทำความสะอาด: ลบ c("..."), ["..."] และแปลงแท็กสีฟ้า
+const cleanHtmlContent = (text?: string) => {
+  if (!text) return '';
+  return text
+    .replace(/^c\(\s*["']/g, '') // ลบ c(" หรือ c(' ด้านหน้าสุด
+    .replace(/["']\s*\)$/g, '') // ลบ ") หรือ ') ด้านหลังสุด
+    .replace(/^\[\s*["']/g, '') // ลบ [" (ของ Python)
+    .replace(/["']\s*\]$/g, '') // ลบ "] (ของ Python)
+    .replace(/className=/g, 'class='); // แปลงแท็กสีฟ้าให้ React รู้จัก
+};
+
 export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -110,7 +121,7 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -119,7 +130,10 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
       >
         {/* Header with Close Button */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
-          <h2 className="text-2xl font-bold text-slate-100">{recipe.name}</h2>
+          <h2 
+            className="text-2xl font-bold text-slate-100"
+            dangerouslySetInnerHTML={{ __html: cleanHtmlContent(recipe.name) }}
+          />
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
@@ -132,7 +146,7 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
         <div className="relative h-64 w-full bg-slate-800">
           <Image
             src={recipe.image}
-            alt={recipe.name}
+            alt={recipe.name.replace(/<[^>]+>/g, '')} // ลบแท็ก HTML ออกจาก alt
             fill
             unoptimized
             sizes="(max-width: 768px) 100vw, 800px"
@@ -142,8 +156,10 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Description */}
-          <p className="text-slate-300 text-base leading-relaxed">{recipe.description}</p>
+          <p 
+            className="text-slate-300 text-base leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: cleanHtmlContent(recipe.description) }}
+          />
 
           {/* Action Buttons Section */}
           <div className="bg-slate-950 rounded-xl p-5 border border-slate-800 space-y-4">
