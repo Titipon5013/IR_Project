@@ -188,7 +188,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-slate-900 to-slate-950">
+      <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-slate-900 to-slate-950 relative z-[60]">
         <div className="container mx-auto max-w-5xl text-center">
           <h1
             className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-slate-100 to-sky-400 bg-clip-text text-transparent"
@@ -204,13 +204,14 @@ export default function Home() {
             Search thousands of recipes, bookmark your favorites, and get AI-powered
             recommendations tailored to your taste.
           </p>
-          <div data-aos="fade-up" data-aos-delay="200">
+
+          <div data-aos="fade-up" data-aos-delay="200" className="relative z-[60]">
             <SearchBar onSearch={handleSearch} onClear={handleClear} />
           </div>
         </div>
       </section>
 
-      <section className="py-12 px-4">
+      <section className="py-12 px-4 relative z-10">
         <div className="container mx-auto max-w-7xl">
           {isSearching ? (
             <div>

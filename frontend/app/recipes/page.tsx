@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
 import {
   getAllRecipesPaginated,
+  getCategories,
   getRandomRecipes,
   getRecipesByCategoryPaginated,
   toUiRecipe,
@@ -29,6 +30,7 @@ function clampPage(value: number): number {
 }
 
 export default function RecipesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const section = normalizeSection(searchParams.get('section'));
   const category = searchParams.get('category') || '';
@@ -36,8 +38,11 @@ export default function RecipesPage() {
 
   const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,6 +50,30 @@ export default function RecipesPage() {
   useEffect(() => {
     setPage(initialPage);
   }, [initialPage, section, category]);
+
+  useEffect(() => {
+    if (section !== 'all') return;
+
+    let isMounted = true;
+    const loadCategories = async () => {
+      setIsCategoriesLoading(true);
+      try {
+        const categoryRows = await getCategories();
+        if (!isMounted) return;
+        setCategories(categoryRows.map((item) => item.name));
+      } catch {
+        if (!isMounted) return;
+        setCategories([]);
+      } finally {
+        if (isMounted) setIsCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, [section]);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,6 +86,7 @@ export default function RecipesPage() {
           const response = await getRecipesByCategoryPaginated(category, page, PAGE_SIZE);
           if (!isMounted) return;
           setRecipes(response.results.map(toUiRecipe));
+          setTotalResults(response.total || 0);
           setTotalPages(Math.max(1, response.total_pages || 1));
           return;
         }
@@ -65,17 +95,29 @@ export default function RecipesPage() {
           const random = await getRandomRecipes(PAGE_SIZE);
           if (!isMounted) return;
           setRecipes(random.map(toUiRecipe));
+          setTotalResults(random.length);
           setTotalPages(Math.max(1, page));
+          return;
+        }
+
+        if (section === 'all' && category) {
+          const response = await getRecipesByCategoryPaginated(category, page, PAGE_SIZE);
+          if (!isMounted) return;
+          setRecipes(response.results.map(toUiRecipe));
+          setTotalResults(response.total || 0);
+          setTotalPages(Math.max(1, response.total_pages || 1));
           return;
         }
 
         const response = await getAllRecipesPaginated(page, PAGE_SIZE);
         if (!isMounted) return;
         setRecipes(response.results.map(toUiRecipe));
+        setTotalResults(response.total || 0);
         setTotalPages(Math.max(1, response.total_pages || 1));
       } catch (loadError) {
         if (!isMounted) return;
         setRecipes([]);
+        setTotalResults(0);
         setTotalPages(1);
         setError(loadError instanceof Error ? loadError.message : 'Failed to load recipes');
       } finally {
@@ -104,6 +146,16 @@ export default function RecipesPage() {
     return `/recipes?${query.toString()}`;
   };
 
+  const handleCategoryChange = (nextCategory: string) => {
+    const query = new URLSearchParams();
+    query.set('section', 'all');
+    query.set('page', '1');
+    if (nextCategory) {
+      query.set('category', nextCategory);
+    }
+    router.push(`/recipes?${query.toString()}`);
+  };
+
   const canGoPrev = page > 1;
   const canGoNext = page < totalPages || section === 'picked' || section === 'surprise';
 
@@ -114,6 +166,30 @@ export default function RecipesPage() {
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-100">{sectionTitle}</h1>
             <p className="text-slate-400 mt-2">Browse recipes with paginated navigation</p>
+            {(section === 'all' || (section === 'trending' && category)) && (
+              <p className="text-slate-500 mt-1 text-sm">{totalResults.toLocaleString()} menus found</p>
+            )}
+            {section === 'all' && (
+              <div className="mt-4">
+                <label htmlFor="all-recipes-category" className="block text-sm text-slate-400 mb-2">
+                  Filter by category
+                </label>
+                <select
+                  id="all-recipes-category"
+                  value={category}
+                  onChange={(event) => handleCategoryChange(event.target.value)}
+                  className="w-full sm:w-72 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-sky-500"
+                  disabled={isCategoriesLoading}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((categoryName) => (
+                    <option key={categoryName} value={categoryName}>
+                      {categoryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <Link
             href="/"
