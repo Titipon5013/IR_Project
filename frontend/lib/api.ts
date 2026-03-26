@@ -174,8 +174,6 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 // Get auto-suggestions
-// ในไฟล์ api.ts (ลบฟังก์ชัน getSuggestions เดิมแล้วแปะอันนี้แทน)
-
 export async function getSuggestions(query: string): Promise<SuggestionResponse> {
   if (query.trim().length < 1) {
     return {
@@ -202,8 +200,6 @@ export async function getSuggestions(query: string): Promise<SuggestionResponse>
             const name = item.trim();
             if (!name) return null;
             
-            // สร้าง Highlight เองเลย! (ทำตัวหนาสีฟ้าให้ส่วนที่ตรงกับคำค้นหา)
-            // ใช้ Regex แบบ case-insensitive ในการคลุม <b>
             const regex = new RegExp(`(${query})`, 'gi');
             const highlighted = name.replace(regex, "<b class='text-sky-400'>$1</b>");
             
@@ -239,12 +235,23 @@ export async function getPersonalizedRecommendations(
   userId: string,
   limit: number = 8
 ): Promise<RecommendMlResponse> {
+  let recentBookmarks: number[] = [];
+  try {
+    const bookmarks = await getBookmarks(userId);
+    recentBookmarks = bookmarks.slice(0, 5).map(b => b.recipeId);
+  } catch (e) {
+    console.error("Failed to fetch bookmarks for recommendations", e);
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/recommend/ml?limit=${limit}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ user_id: userId }),
+    body: JSON.stringify({ 
+      user_id: userId,
+      recent_bookmarks: recentBookmarks
+    }),
   });
 
   if (!response.ok) {
