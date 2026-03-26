@@ -115,21 +115,21 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-zinc-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800 shadow-2xl"
+        className="bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-800 shadow-2xl"
       >
         {/* Header with Close Button */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800">
-          <h2 className="text-2xl font-bold text-zinc-100">{recipe.name}</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
+          <h2 className="text-2xl font-bold text-slate-100">{recipe.name}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
           >
-            <X className="text-zinc-400 hover:text-zinc-100" size={24} />
+            <X className="text-slate-400 hover:text-slate-100" size={24} />
           </button>
         </div>
 
         {/* Recipe Image */}
-        <div className="relative h-64 w-full bg-zinc-800">
+        <div className="relative h-64 w-full bg-slate-800">
           <Image
             src={recipe.image}
             alt={recipe.name}
@@ -143,13 +143,13 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Description */}
-          <p className="text-zinc-300 text-base leading-relaxed">{recipe.description}</p>
+          <p className="text-slate-300 text-base leading-relaxed">{recipe.description}</p>
 
           {/* Action Buttons Section */}
-          <div className="bg-zinc-950 rounded-xl p-5 border border-zinc-800 space-y-4">
+          <div className="bg-slate-950 rounded-xl p-5 border border-slate-800 space-y-4">
             {/* Star Rating */}
             <div>
-              <label className="block text-sm font-semibold text-zinc-400 mb-2">
+              <label className="block text-sm font-semibold text-slate-400 mb-2">
                 Rate this dish:
               </label>
               <div className="flex items-center gap-2">
@@ -166,13 +166,13 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
                       className={
                         star <= (hoveredRating || rating)
                           ? 'text-amber-400 fill-amber-400'
-                          : 'text-zinc-700'
+                          : 'text-slate-700'
                       }
                     />
                   </button>
                 ))}
                 {rating > 0 && (
-                  <span className="ml-2 text-zinc-400 text-sm">
+                  <span className="ml-2 text-slate-400 text-sm">
                     {rating} {rating === 1 ? 'star' : 'stars'}
                   </span>
                 )}
@@ -181,14 +181,14 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
 
             {/* Folder Selection */}
             <div>
-              <label className="block text-sm font-semibold text-zinc-400 mb-2">
+              <label className="block text-sm font-semibold text-slate-400 mb-2">
                 Save to folder:
               </label>
               <div className="relative">
                 <select
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
+                  className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-sky-500 transition-colors appearance-none cursor-pointer"
                 >
                   <option value="">Select a folder...</option>
                   {folders.map((folder) => (
@@ -199,7 +199,7 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
                 </select>
                 <FolderHeart
                   size={18}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
                 />
               </div>
             </div>
@@ -210,8 +210,8 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
               disabled={isBookmarked}
               className={`w-full flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all ${
                 isBookmarked
-                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                  : 'bg-emerald-500 hover:bg-emerald-600 text-zinc-950'
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  : 'bg-sky-500 hover:bg-sky-600 text-slate-950'
               }`}
             >
               <Bookmark size={20} fill={isBookmarked ? 'currentColor' : 'none'} />
@@ -221,15 +221,15 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
 
           {/* Ingredients */}
           <div>
-            <h3 className="text-xl font-bold text-zinc-100 mb-3 flex items-center gap-2">
-              <span className="h-1 w-1 bg-emerald-500 rounded-full"></span>
+            <h3 className="text-xl font-bold text-slate-100 mb-3 flex items-center gap-2">
+              <span className="h-1 w-1 bg-sky-500 rounded-full"></span>
               Ingredients
             </h3>
             <ul className="space-y-2">
               {ingredients.map((ingredient, index) => (
                 <li
                   key={index}
-                  className="text-zinc-300 pl-4 border-l-2 border-zinc-800 hover:border-emerald-500 transition-colors"
+                  className="text-slate-300 pl-4 border-l-2 border-slate-800 hover:border-sky-500 transition-colors"
                 >
                   {ingredient}
                 </li>
@@ -239,17 +239,17 @@ export default function RecipeModal({ recipe, isOpen, onClose }: RecipeModalProp
 
           {/* Instructions */}
           <div>
-            <h3 className="text-xl font-bold text-zinc-100 mb-3 flex items-center gap-2">
-              <span className="h-1 w-1 bg-emerald-500 rounded-full"></span>
+            <h3 className="text-xl font-bold text-slate-100 mb-3 flex items-center gap-2">
+              <span className="h-1 w-1 bg-sky-500 rounded-full"></span>
               Instructions
             </h3>
             <ol className="space-y-3">
               {instructions.map((instruction, index) => (
                 <li key={index} className="flex gap-4">
-                  <span className="flex-shrink-0 w-8 h-8 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-sky-500/10 text-sky-400 rounded-full flex items-center justify-center font-bold text-sm">
                     {index + 1}
                   </span>
-                  <p className="text-zinc-300 pt-1">{instruction}</p>
+                  <p className="text-slate-300 pt-1">{instruction}</p>
                 </li>
               ))}
             </ol>

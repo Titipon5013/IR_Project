@@ -108,16 +108,16 @@ export default function RecipesPage() {
   const canGoNext = page < totalPages || section === 'picked' || section === 'surprise';
 
   return (
-    <div className="min-h-screen bg-zinc-950 py-12 px-4">
+    <div className="min-h-screen bg-slate-950 py-12 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-zinc-100">{sectionTitle}</h1>
-            <p className="text-zinc-400 mt-2">Browse recipes with paginated navigation</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-100">{sectionTitle}</h1>
+            <p className="text-slate-400 mt-2">Browse recipes with paginated navigation</p>
           </div>
           <Link
             href="/"
-            className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+            className="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:text-slate-100 hover:border-slate-500 transition-colors"
           >
             Back to Home
           </Link>
@@ -130,9 +130,9 @@ export default function RecipesPage() {
         )}
 
         {isLoading ? (
-          <div className="text-center py-20 text-zinc-500">Loading recipes...</div>
+          <div className="text-center py-20 text-slate-500">Loading recipes...</div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-20 text-zinc-500">No recipes available</div>
+          <div className="text-center py-20 text-slate-500">No recipes available</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes.map((recipe) => (
@@ -148,15 +148,15 @@ export default function RecipesPage() {
           {canGoPrev ? (
             <Link
               href={buildHref(page - 1)}
-              className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+              className="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:text-slate-100 hover:border-slate-500 transition-colors"
             >
               Previous
             </Link>
           ) : (
-            <span className="px-4 py-2 rounded-lg border border-zinc-800 text-zinc-600">Previous</span>
+            <span className="px-4 py-2 rounded-lg border border-slate-800 text-slate-600">Previous</span>
           )}
 
-          <span className="px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-200">
+          <span className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-200">
             {section === 'picked' || section === 'surprise'
               ? `Page ${page}`
               : `Page ${page} of ${totalPages}`}
@@ -165,12 +165,12 @@ export default function RecipesPage() {
           {canGoNext ? (
             <Link
               href={buildHref(page + 1)}
-              className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+              className="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:text-slate-100 hover:border-slate-500 transition-colors"
             >
               Next
             </Link>
           ) : (
-            <span className="px-4 py-2 rounded-lg border border-zinc-800 text-zinc-600">Next</span>
+            <span className="px-4 py-2 rounded-lg border border-slate-800 text-slate-600">Next</span>
           )}
         </div>
       </div>

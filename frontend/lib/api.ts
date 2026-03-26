@@ -30,6 +30,11 @@ export interface Category {
   count: number;
 }
 
+export interface SuggestionResponse {
+  suggestions: string[];
+  isTypo: boolean;
+}
+
 export interface PaginatedRecipesResponse {
   results: Recipe[];
   page: number;
@@ -159,8 +164,13 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 // Get auto-suggestions
-export async function getSuggestions(query: string): Promise<string[]> {
-  if (query.length < 2) return [];
+export async function getSuggestions(query: string): Promise<SuggestionResponse> {
+  if (query.length < 2) {
+    return {
+      suggestions: [],
+      isTypo: false,
+    };
+  }
 
   const response = await fetch(
     `${API_BASE_URL}/api/suggest?q=${encodeURIComponent(query)}`
@@ -171,7 +181,10 @@ export async function getSuggestions(query: string): Promise<string[]> {
   }
 
   const data = await response.json();
-  return data.suggestions;
+  return {
+    suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+    isTypo: Boolean(data.is_typo),
+  };
 }
 
 // Get recipes by IDs (for bookmarks)

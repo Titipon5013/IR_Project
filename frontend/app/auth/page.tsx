@@ -16,13 +16,13 @@ export default function AuthPage() {
   }, [isLoading, user, router]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 py-14 px-4">
+    <div className="min-h-screen bg-slate-950 py-14 px-4">
       <div className="container mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div>
-          <h1 className="text-4xl font-bold text-zinc-100 leading-tight">
-            Welcome to <span className="text-emerald-400">Food Assemble</span>
+          <h1 className="text-4xl font-bold text-slate-100 leading-tight">
+            Welcome to <span className="text-sky-400">Food Assemble</span>
           </h1>
-          <p className="text-zinc-400 mt-4 text-lg">
+          <p className="text-slate-400 mt-4 text-lg">
             Login or register to save recipes into your folders and build your personal food archive.
           </p>
         </div>
