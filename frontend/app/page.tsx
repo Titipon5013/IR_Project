@@ -1,79 +1,170 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import RecipeCard, { Recipe } from '@/components/RecipeCard';
 import RecipeModal from '@/components/RecipeModal';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 import {
   getAllRecipesPaginated,
-  getCategories,
+  getPersonalizedRecommendations,
   getRandomRecipes,
-  getRecipesByCategory,
+  getTrendingRecipes,
   searchRecipes,
   toUiRecipe,
 } from '@/lib/api';
 
+function RowSkeleton() {
+  return (
+    <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div
+          key={index}
+          className="w-72 h-80 rounded-xl border border-slate-800 bg-slate-900/70 animate-pulse flex-shrink-0"
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
+  const { user, isLoading: isAuthLoading } = useAuth();
+
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [personalizedRecipes, setPersonalizedRecipes] = useState<Recipe[]>([]);
-  const [categoryRecipes, setCategoryRecipes] = useState<Recipe[]>([]);
+
+  const [pickedRecipes, setPickedRecipes] = useState<Recipe[]>([]);
+  const [trendingRecipes, setTrendingRecipes] = useState<Recipe[]>([]);
   const [randomRecipes, setRandomRecipes] = useState<Recipe[]>([]);
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
-  const [categoryTitle, setCategoryTitle] = useState('Trending');
-  const [topTrendingCategory, setTopTrendingCategory] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [isPickedLoading, setIsPickedLoading] = useState(false);
+  const [isTrendingLoading, setIsTrendingLoading] = useState(true);
+  const [isRandomLoading, setIsRandomLoading] = useState(true);
+  const [isAllLoading, setIsAllLoading] = useState(true);
+  const [isPickedPersonalized, setIsPickedPersonalized] = useState<boolean | null>(null);
+
   const [refreshKey, setRefreshKey] = useState(0);
+  const trendingRowRef = useRef<HTMLDivElement>(null);
   const [trendingScrollState, setTrendingScrollState] = useState({ canLeft: false, canRight: false });
-  const sectionScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const updateTrendingScrollState = () => {
+    const container = trendingRowRef.current;
+    if (!container) {
+      setTrendingScrollState({ canLeft: false, canRight: false });
+      return;
+    }
+
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setTrendingScrollState({
+      canLeft: container.scrollLeft > 4,
+      canRight: container.scrollLeft < maxScrollLeft - 4,
+    });
+  };
+
+  const handleTrendingScroll = (direction: 'left' | 'right') => {
+    const container = trendingRowRef.current;
+    if (!container) return;
+
+    const distance = Math.max(280, Math.floor(container.clientWidth * 0.8));
+    container.scrollBy({
+      left: direction === 'right' ? distance : -distance,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [picked, surprise, allPage, categories] = await Promise.all([
-          getRandomRecipes(8),
-          getRandomRecipes(8),
-          getAllRecipesPaginated(1, 8),
-          getCategories(),
-        ]);
+    const loadPublicSections = async () => {
+      setIsTrendingLoading(true);
+      setIsRandomLoading(true);
+      setIsAllLoading(true);
 
-        setPersonalizedRecipes(picked.slice(0, 4).map(toUiRecipe));
-        setRandomRecipes(surprise.slice(0, 4).map(toUiRecipe));
-        setAllRecipes(allPage.results.slice(0, 4).map(toUiRecipe));
+      const [trendingResult, randomResult, allResult] = await Promise.allSettled([
+        getTrendingRecipes(8),
+        getRandomRecipes(8),
+        getAllRecipesPaginated(1, 8),
+      ]);
 
-        const topCategories = categories.slice(0, 2).map((category) => category.name);
-        if (topCategories.length === 0) {
-          setCategoryRecipes([]);
-          setCategoryTitle('Trending');
-          setTopTrendingCategory('');
-          return;
-        }
+      if (trendingResult.status === 'fulfilled') {
+        setTrendingRecipes(trendingResult.value.map(toUiRecipe));
+      } else {
+        setTrendingRecipes([]);
+      }
+      setIsTrendingLoading(false);
 
-        const categoryGroups = await Promise.all(
-          topCategories.map((categoryName) => getRecipesByCategory(categoryName, 6))
-        );
-        const merged = categoryGroups.flat().slice(0, 8).map(toUiRecipe);
-        setCategoryRecipes(merged);
-        setCategoryTitle(`Trending in ${topCategories.join(' & ')}`);
-        setTopTrendingCategory(topCategories[0]);
-      } catch {
-        setPersonalizedRecipes([]);
-        setCategoryRecipes([]);
+      if (randomResult.status === 'fulfilled') {
+        setRandomRecipes(randomResult.value.slice(0, 8).map(toUiRecipe));
+      } else {
         setRandomRecipes([]);
+      }
+      setIsRandomLoading(false);
+
+      if (allResult.status === 'fulfilled') {
+        setAllRecipes(allResult.value.results.slice(0, 8).map(toUiRecipe));
+      } else {
         setAllRecipes([]);
-        setTopTrendingCategory('');
+      }
+      setIsAllLoading(false);
+    };
+
+    loadPublicSections();
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      updateTrendingScrollState();
+    });
+
+    const onResize = () => updateTrendingScrollState();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [trendingRecipes.length, isTrendingLoading]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    if (!user) {
+      Promise.resolve().then(() => {
+        setPickedRecipes([]);
+        setIsPickedPersonalized(null);
+        setIsPickedLoading(false);
+      });
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadPickedSection = async () => {
+      setIsPickedLoading(true);
+      try {
+        const response = await getPersonalizedRecommendations(user.id, 8);
+        if (!isMounted) return;
+        setPickedRecipes(response.results.map(toUiRecipe));
+        setIsPickedPersonalized(response.isPersonalized);
+      } catch {
+        if (!isMounted) return;
+        setPickedRecipes([]);
+        setIsPickedPersonalized(null);
       } finally {
-        setIsLoading(false);
+        if (!isMounted) return;
+        setIsPickedLoading(false);
       }
     };
 
-    loadData();
-  }, [refreshKey]);
+    void loadPickedSection();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthLoading, user]);
 
   const handleSearch = async (query: string) => {
     setIsSearching(true);
@@ -95,77 +186,8 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
-  const updateTrendingScrollState = () => {
-    const container = sectionScrollRefs.current.trending;
-    if (!container) {
-      setTrendingScrollState({ canLeft: false, canRight: false });
-      return;
-    }
-
-    const maxScrollLeft = container.scrollWidth - container.clientWidth;
-    setTrendingScrollState({
-      canLeft: container.scrollLeft > 4,
-      canRight: container.scrollLeft < maxScrollLeft - 4,
-    });
-  };
-
-  const handleScroll = (sectionKey: string, direction: 'left' | 'right') => {
-    const container = sectionScrollRefs.current[sectionKey];
-    if (!container) return;
-
-    const distance = Math.max(260, Math.floor(container.clientWidth * 0.8));
-    container.scrollBy({
-      left: direction === 'right' ? distance : -distance,
-      behavior: 'smooth',
-    });
-  };
-
-  useEffect(() => {
-    updateTrendingScrollState();
-
-    const onResize = () => updateTrendingScrollState();
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-    };
-  }, [categoryRecipes.length, isLoading]);
-
-  const homeSections = useMemo(
-    () => [
-      {
-        key: 'picked',
-        title: 'Picked For You',
-        recipes: personalizedRecipes,
-        href: '/recipes?section=picked',
-      },
-      {
-        key: 'trending',
-        title: categoryTitle,
-        recipes: categoryRecipes,
-        href: topTrendingCategory
-          ? `/recipes?section=trending&category=${encodeURIComponent(topTrendingCategory)}`
-          : '/recipes?section=trending',
-      },
-      {
-        key: 'surprise',
-        title: 'Surprise Me',
-        recipes: randomRecipes,
-        href: '/recipes?section=surprise',
-      },
-      {
-        key: 'all',
-        title: 'All Recipes',
-        recipes: allRecipes,
-        href: '/recipes?section=all',
-      },
-    ],
-    [personalizedRecipes, categoryRecipes, randomRecipes, allRecipes, categoryTitle, topTrendingCategory]
-  );
-
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="container mx-auto max-w-5xl text-center">
           <h1
@@ -188,16 +210,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Content Section */}
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-7xl">
           {isSearching ? (
-            /* Search Results Grid */
             <div>
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-slate-100">
-                  Search Results{' '}
-                  <span className="text-sky-400">({searchResults.length})</span>
+                  Search Results <span className="text-sky-400">({searchResults.length})</span>
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -217,76 +236,146 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            /* Curated Carousels */
-              <div className="space-y-12">
-                {isLoading ? (
-                  <div className="text-center py-20 text-slate-500">Loading recipes...</div>
-                ) : (
-                  homeSections.map((section, index) => (
-                    <div key={section.key} data-aos="fade-up" data-aos-delay={index * 100}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-slate-100">{section.title}</h2>
-                        <div className="flex items-center gap-4">
-                          {section.key === 'trending' && section.recipes.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleScroll(section.key, 'left')}
-                                disabled={!trendingScrollState.canLeft}
-                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                aria-label="Scroll trending recipes to the left"
-                              >
-                                <ChevronLeft size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleScroll(section.key, 'right')}
-                                disabled={!trendingScrollState.canRight}
-                                className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                aria-label="Scroll trending recipes to the right"
-                              >
-                                <ChevronRight size={16} />
-                              </button>
-                            </div>
-                          )}
-                          {section.key === 'surprise' && (
-                            <button
-                              onClick={() => setRefreshKey((prev) => prev + 1)}
-                              className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
-                            >
-                              Refresh
-                            </button>
-                          )}
-                          <Link
-                            href={section.href}
-                            className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm"
-                          >
-                            View All <ChevronRight size={16} />
-                          </Link>
-                        </div>
-                      </div>
-                      <div
-                        onScroll={section.key === 'trending' ? updateTrendingScrollState : undefined}
-                        ref={(el) => {
-                          sectionScrollRefs.current[section.key] = el;
-                        }}
-                        className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide"
-                      >
-                        {section.recipes.length > 0 ? (
-                          section.recipes.map((recipe) => (
-                            <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
-                          ))
-                        ) : (
-                          <div className="text-slate-500 py-4">No recipes available</div>
-                        )}
-                      </div>
+            <div className="space-y-12">
+              <div data-aos="fade-up">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-100">Picked For You</h2>
+                  {user && (
+                    <Link
+                      href="/recipes?section=picked"
+                      className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm"
+                    >
+                      View All <ChevronRight size={16} />
+                    </Link>
+                  )}
+                </div>
+
+                {!isAuthLoading && !user ? (
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center">
+                    <p className="text-slate-300">Sign in to see your personalized recommendations</p>
+                    <Link
+                      href="/auth"
+                      className="inline-flex mt-4 px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-semibold transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                  </div>
+                ) : isPickedLoading ? (
+                  <RowSkeleton />
+                ) : pickedRecipes.length > 0 ? (
+                  <>
+                    <div className="mb-3 text-sm text-slate-400">
+                      {isPickedPersonalized
+                        ? 'Tailored by your taste profile'
+                        : 'Showing trending fallback while we learn your taste'}
                     </div>
-                  ))
+                    <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                      {pickedRecipes.map((recipe) => (
+                        <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-slate-500 py-4">No personalized recommendations yet</div>
                 )}
               </div>
+
+              <div data-aos="fade-up" data-aos-delay="100">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-100">Trending Now</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleTrendingScroll('left')}
+                      disabled={!trendingScrollState.canLeft}
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Scroll trending recipes to the left"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleTrendingScroll('right')}
+                      disabled={!trendingScrollState.canRight}
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-slate-700 text-slate-300 enabled:hover:text-sky-400 enabled:hover:border-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Scroll trending recipes to the right"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                    <Link
+                      href="/recipes?section=trending"
+                      className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm ml-2"
+                    >
+                      View All <ChevronRight size={16} />
+                    </Link>
+                  </div>
+                </div>
+
+                {isTrendingLoading ? (
+                  <RowSkeleton />
+                ) : trendingRecipes.length > 0 ? (
+                  <div
+                    ref={trendingRowRef}
+                    onScroll={updateTrendingScrollState}
+                    className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide"
+                  >
+                    {trendingRecipes.map((recipe) => (
+                      <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 py-4">No trending recipes available</div>
+                )}
+              </div>
+
+              <div data-aos="fade-up" data-aos-delay="200">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-100">Surprise Me</h2>
+                  <button
+                    onClick={() => setRefreshKey((prev) => prev + 1)}
+                    className="text-slate-500 hover:text-slate-200 transition-colors text-sm"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                {isRandomLoading ? (
+                  <RowSkeleton />
+                ) : randomRecipes.length > 0 ? (
+                  <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                    {randomRecipes.map((recipe) => (
+                      <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 py-4">No recipes available</div>
+                )}
+              </div>
+
+              <div data-aos="fade-up" data-aos-delay="300">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-100">All Recipes</h2>
+                  <Link
+                    href="/recipes?section=all"
+                    className="text-slate-400 hover:text-sky-400 transition-colors flex items-center gap-1 text-sm"
+                  >
+                    View All <ChevronRight size={16} />
+                  </Link>
+                </div>
+                {isAllLoading ? (
+                  <RowSkeleton />
+                ) : allRecipes.length > 0 ? (
+                  <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory scrollbar-hide">
+                    {allRecipes.map((recipe) => (
+                      <RecipeCard key={recipe.id} recipe={recipe} onClick={handleRecipeClick} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 py-4">No recipes available</div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </section>
 
-      {/* Recipe Modal */}
       <RecipeModal
         recipe={selectedRecipe}
         isOpen={isModalOpen}
