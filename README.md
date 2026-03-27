@@ -1,4 +1,4 @@
-# Food Assemble 🍳
+# Food Assemble
 
 A comprehensive food bookmarking, search, and recommendation web application built for the SE481 Introduction to Information Retrieval course. This project leverages modern web technologies and advanced Information Retrieval (IR) techniques to provide users with a seamless recipe discovery experience.
 
@@ -6,7 +6,7 @@ A comprehensive food bookmarking, search, and recommendation web application bui
 
 ---
 
-## 🏗️ Tech Stack & Architecture
+## Tech Stack & Architecture
 - **Frontend:** Next.js (React), Tailwind CSS, Supabase Client.
 - **Backend:** Python, Flask, Elasticsearch (v9.x).
 - **Machine Learning & IR:** Scikit-Learn, SciPy, TF-IDF, Truncated SVD, BM25.
@@ -15,7 +15,7 @@ A comprehensive food bookmarking, search, and recommendation web application bui
 
 ---
 
-## ✨ Features & Rubric Implementation Details
+## Features & Rubric Implementation Details
 
 ### 1. User Authentication (UC-001)
 **Implementation:** Secure user authentication is managed via **Supabase Auth**. Users can register, log in, and log out securely. The frontend uses `@supabase/supabase-js` to handle session states and protect personalized routes (e.g., Folders, Bookmarks) using Next.js middleware and Auth Guards.
