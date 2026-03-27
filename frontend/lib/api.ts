@@ -428,3 +428,41 @@ export async function saveBookmark(
   if (error) throw error;
   return mapBookmarkRow(data);
 }
+
+export async function updateBookmark(
+  userId: string,
+  bookmarkId: string,
+  updates: { folderId?: string; userRating?: number }
+): Promise<BookmarkEntry> {
+  const supabase = getSupabaseOrThrow();
+  const payload: { folder_id?: string; rating?: number } = {};
+
+  if (updates.folderId !== undefined) payload.folder_id = updates.folderId;
+  if (updates.userRating !== undefined) payload.rating = updates.userRating;
+
+  if (Object.keys(payload).length === 0) {
+    throw new Error('No bookmark updates provided');
+  }
+
+  const { data, error } = await supabase
+    .from('bookmarks')
+    .update(payload)
+    .eq('id', bookmarkId)
+    .eq('user_id', userId)
+    .select('id, recipe_id, folder_id, rating, created_at')
+    .single();
+
+  if (error) throw error;
+  return mapBookmarkRow(data);
+}
+
+export async function deleteBookmark(userId: string, bookmarkId: string): Promise<void> {
+  const supabase = getSupabaseOrThrow();
+  const { error } = await supabase
+    .from('bookmarks')
+    .delete()
+    .eq('id', bookmarkId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
