@@ -400,9 +400,7 @@ def recommend_ml():
         top_ids = [svd_recipe_ids[i] for i in top_item_indices]
         is_personalized = True
 
-    # 2. ถ้าเป็น User ใหม่ แต่มี Bookmark (Real-time update)
     elif recent_bookmarks:
-        # ใช้ More Like This ของ Elasticsearch เดาใจจาก Bookmark ล่าสุด
         id_response = es.search(
             index=INDEX_NAME,
             body={
@@ -458,4 +456,13 @@ def recommend_ml():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(
+        debug=True,
+        port=5000,
+        exclude_patterns=[
+            '*/frontend/*',
+            '*/test-results/*',
+            '*/.playwright-artifacts-*/*',
+            '*/playwright-report/*'
+        ]
+    )
