@@ -51,23 +51,11 @@ A comprehensive food bookmarking, search, and recommendation web application bui
 
 ### 9. Exciting IR Features (2 Additional Features)
 
-Implementation: To provide a cutting-edge user experience, the application introduces two additional advanced Information Retrieval features beyond the core requirements:
+**Implementation:** To provide a cutting-edge user experience, the application introduces two additional advanced Information Retrieval features beyond the core requirements:
 
-Feature 1: AI-Powered Recipe Classification:
+- **Feature 1: AI-Powered Recipe Classification:** An advanced Machine Learning pipeline automatically categorizes recipes based on raw text. The system extracts features using a concatenated sparse matrix consisting of TF-IDF on Titles (Word level), TF-IDF on Ingredients (Word level), and TF-IDF on Titles (Character n-gram level). These combined features are fed into a pre-trained classification model (recipe_classifier.pkl) deployed on the Flask backend (/api/classify) to dynamically predict the culinary category of arbitrary text inputs.
 
-An advanced Machine Learning pipeline automatically categorizes recipes based on raw text.
-
-The system extracts features using a concatenated sparse matrix consisting of TF-IDF on Titles (Word level), TF-IDF on Ingredients (Word level), and TF-IDF on Titles (Character n-gram level).
-
-These combined features are fed into a pre-trained classification model (recipe_classifier.pkl) deployed on the Flask backend (/api/classify) to dynamically predict the culinary category of arbitrary text inputs.
-
-Feature 2: Advanced Contextual Fallback Engine:
-
-To solve the "Cold Start" problem in the recommendation system, the pipeline features an intelligent fallback mechanism.
-
-If an authenticated user lacks interaction history (SVD cannot be applied), the system dynamically reads the contents of the user's currently viewed folder. It then extracts the document IDs and executes an Elasticsearch more_like_this query.
-
-This effectively merges Collaborative Filtering with Content-Based Contextual Filtering, ensuring the user always receives highly relevant, context-aware suggestions seamlessly.
+- **Feature 2: Advanced Contextual Fallback Engine:** To solve the "Cold Start" problem in the recommendation system, the pipeline features an intelligent fallback mechanism. If an authenticated user lacks interaction history (SVD cannot be applied), the system dynamically reads the contents of the user's currently viewed folder. It then extracts the document IDs and executes an Elasticsearch more_like_this query. This effectively merges Collaborative Filtering with Content-Based Contextual Filtering, ensuring the user always receives highly relevant, context-aware suggestions seamlessly.
 
 ### 10. Automated Testing
 **Implementation:** A robust, multi-layered testing strategy ensures application stability.
