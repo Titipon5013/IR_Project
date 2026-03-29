@@ -87,7 +87,7 @@ def test_get_recipes_by_ids(client):
 
     data = response.json
     assert 'results' in data
-    # ถ้ามีข้อมูลใน DB มันควรจะคืนค่ากลับมา
+
     if len(data['results']) > 0:
         assert 'RecipeId' in data['results'][0]
 
