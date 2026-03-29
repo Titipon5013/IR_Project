@@ -15,6 +15,30 @@ A comprehensive food bookmarking, search, and recommendation web application bui
 
 ---
 
+## Web Features
+
+The landing page provides three dynamic recipe lists to ensure a rich user discovery experience, as required by the project specifications.
+
+### Picked for You (Personalized Recommendations):
+
+- **Implementation:** This feature delivers tailored content using a hybrid recommendation strategy.
+
+- **Technique:** It utilizes Singular Value Decomposition (SVD) for users with an interaction history, mapping them into a latent factor space to predict preferences. For new users or recent interactions, the system falls back to an Elasticsearch more_like_this query to find recipes contextually similar to their bookmarks.
+
+### Trending (Popular Recipes):
+
+- **Implementation:** Provides instant value by surfacing recipes that are currently popular within the dataset.
+
+- **Technique:** To ensure high performance, the system uses Pre-computation. A list of top-rated recipe IDs is stored in trending_recipe_ids.pkl. When requested, the Flask backend executes an efficient Elasticsearch terms query to retrieve full metadata for these specific IDs.
+
+### Surprise Me (Random Discovery):
+
+- **Implementation:** Encourages exploration by presenting a set of completely random dishes.
+
+- **Technique:** Instead of randomizing in the application layer, the feature leverages the search engine's capabilities via the /api/recipes/random endpoint. It uses Elasticsearch’s function_score with a random_score parameter. This ensures that the randomness is handled efficiently at the database level, providing a fresh set of results on every click.
+
+---
+
 ## Features & Rubric Implementation Details
 
 ### 1. User Authentication (UC-001)
