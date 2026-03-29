@@ -83,49 +83,38 @@ export default function FolderDetailPage({ params }: { params: Promise<{ id: str
 
   const folderRecipeIds = useMemo(() => new Set(folderRecipes.map((recipe) => recipe.id)), [folderRecipes]);
 
-  const handleGenerateSuggestions = async () => {
+const handleGenerateSuggestions = async () => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      const categoryCounts = folderRecipes.reduce<Record<string, number>>((acc, recipe) => {
-        if (!recipe.category) return acc;
-        acc[recipe.category] = (acc[recipe.category] || 0) + 1;
-        return acc;
-      }, {});
+      const recentBookmarks = folderRecipes.map((recipe) => Number(recipe.id));
 
-      const topCategories = Object.entries(categoryCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 2)
-        .map(([category]) => category);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/recommend/ml?limit=8`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user?.id,
+          recent_bookmarks: recentBookmarks
+        })
+      });
 
-      const categoryResults = await Promise.all(topCategories.map((category) => getRecipesByCategory(category, 8)));
-
-      const candidates = categoryResults
-        .flat()
-        .map(toUiRecipe)
-        .filter((recipe) => !folderRecipeIds.has(recipe.id));
-
-      const deduped = candidates.filter(
-        (recipe, index, all) => all.findIndex((candidate) => candidate.id === recipe.id) === index
-      );
-
-      let finalSuggestions = deduped.slice(0, 8);
-
-      if (finalSuggestions.length < 4) {
-        const randomRecipes = (await getRandomRecipes(12))
-          .map(toUiRecipe)
-          .filter(
-            (recipe) =>
-              !folderRecipeIds.has(recipe.id) &&
-              !finalSuggestions.some((candidate) => candidate.id === recipe.id)
-          );
-        finalSuggestions = [...finalSuggestions, ...randomRecipes].slice(0, 8);
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI recommendations from backend');
       }
 
-      setAiSuggestions(finalSuggestions);
+      const data = await response.json();
+
+      const aiResults = data.results
+        .map(toUiRecipe)
+        .filter((recipe: Recipe) => !folderRecipeIds.has(recipe.id));
+
+      setAiSuggestions(aiResults.slice(0, 8));
       setHasGenerated(true);
+
     } catch (generationError) {
+      console.error(generationError);
       setError(
         generationError instanceof Error
           ? generationError.message
