@@ -77,3 +77,65 @@ def test_recommend_ml(client):
     assert len(data['results']) <= 4
 
     assert data['is_personalized'] == True
+
+def test_get_recipes_by_ids(client):
+    mock_data = {
+        "recipe_ids": [38, 45]
+    }
+    response = client.post('/api/recipes', json=mock_data)
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'results' in data
+
+    if len(data['results']) > 0:
+        assert 'RecipeId' in data['results'][0]
+
+def test_get_recipes_by_category(client):
+    response = client.get('/api/recipes/category/Dessert?limit=2')
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'results' in data
+    assert data['category'] == 'Dessert'
+    assert 'total' in data
+    assert len(data['results']) <= 2
+
+def test_get_all_recipes(client):
+    response = client.get('/api/recipes/all?limit=2&page=1')
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'results' in data
+    assert 'total' in data
+    assert data['page'] == 1
+    assert len(data['results']) <= 2
+
+def test_get_categories(client):
+    response = client.get('/api/categories')
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'categories' in data
+    if len(data['categories']) > 0:
+        assert 'name' in data['categories'][0]
+        assert 'count' in data['categories'][0]
+
+def test_recommend_recipes_base(client):
+    mock_data = {
+        "recipe_ids": [38]
+    }
+    response = client.post('/api/recommend?limit=3', json=mock_data)
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'results' in data
+    assert len(data['results']) <= 3
+
+def test_get_trending(client):
+    response = client.get('/api/trending?limit=3')
+    assert response.status_code == 200
+
+    data = response.json
+    assert 'results' in data
+    assert len(data['results']) <= 3
